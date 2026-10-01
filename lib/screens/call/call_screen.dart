@@ -44,6 +44,7 @@ class _CallScreenState extends State<CallScreen> {
   Timer? _callTimer;
   Timer? _pingTimer;
   int _pingMs = 35;
+  bool _remoteIsScreenSharing = false;
   StreamSubscription<DocumentSnapshot>? _callSubscription;
 
   @override
@@ -144,6 +145,13 @@ class _CallScreenState extends State<CallScreen> {
 
         final data = snapshot.data();
         if (data != null) {
+          final isSharing = data['isScreenSharing'] as bool? ?? false;
+          if (_remoteIsScreenSharing != isSharing && mounted) {
+            setState(() {
+              _remoteIsScreenSharing = isSharing;
+            });
+          }
+
           final statusStr = data['status'] as String?;
           if (statusStr == CallStatus.connected.name) {
             if (!_isConnected && mounted) {
@@ -175,6 +183,12 @@ class _CallScreenState extends State<CallScreen> {
     _pingTimer?.cancel();
     _callSubscription?.cancel();
 
+    // Gỡ srcObject khỏi renderers trước khi đóng để tránh crash/treo luồng native WebRTC
+    try {
+      _localRenderer.srcObject = null;
+      _remoteRenderer.srcObject = null;
+    } catch (_) {}
+
     _webrtcService.endCall(widget.callId);
 
     if (mounted) {
@@ -198,8 +212,12 @@ class _CallScreenState extends State<CallScreen> {
     _callTimer?.cancel();
     _pingTimer?.cancel();
     _callSubscription?.cancel();
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
+    try {
+      _localRenderer.srcObject = null;
+      _remoteRenderer.srcObject = null;
+      _localRenderer.dispose();
+      _remoteRenderer.dispose();
+    } catch (_) {}
     super.dispose();
   }
 
@@ -215,27 +233,74 @@ class _CallScreenState extends State<CallScreen> {
       );
       if (mounted) setState(() {});
     } else {
+      bool shareAudio = false;
       final confirm = await showDialog<bool>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Chia sẻ màn hình'),
-          content: const Text('Ứng dụng sẽ truyền trực tiếp màn hình của bạn cho người tham gia cuộc gọi.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Bắt đầu chia sẻ'),
-            ),
-          ],
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.screen_share, color: Colors.blueAccent),
+                  SizedBox(width: 8),
+                  Text('Chia sẻ màn hình', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Ứng dụng sẽ truyền trực tiếp hình ảnh màn hình của bạn cho người tham gia cuộc gọi.'),
+                  const SizedBox(height: 14),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.blue.withAlpha(40)),
+                    ),
+                    child: SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                      value: shareAudio,
+                      title: const Text('Phát âm thanh thiết bị', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Truyền cả tiếng nhạc, video YouTube hoặc game sang máy bên kia trong khi vẫn đàm thoại bằng micro.', style: TextStyle(fontSize: 12)),
+                      onChanged: (val) {
+                        setDialogState(() {
+                          shareAudio = val;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Bắt đầu chia sẻ'),
+                ),
+              ],
+            );
+          },
         ),
       );
 
       if (confirm == true) {
-        await _webrtcService.startScreenSharing(
+        final success = await _webrtcService.startScreenSharing(
           callId: widget.callId,
           localRenderer: _localRenderer,
+          shareDeviceAudio: shareAudio,
         );
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {});
+          if (!success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Không thể bắt đầu chia sẻ màn hình. Vui lòng cấp quyền ghi màn hình.')),
+            );
+          }
+        }
       }
     }
   }
@@ -243,7 +308,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     final isVideo = widget.callType == CallType.video;
-    final hasRemoteVideo = isVideo && _remoteRenderer.srcObject != null && _remoteRenderer.renderVideo;
+    final hasRemoteVideo = (isVideo || _remoteIsScreenSharing) && _remoteRenderer.srcObject != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -255,7 +320,9 @@ class _CallScreenState extends State<CallScreen> {
               Positioned.fill(
                 child: RTCVideoView(
                   _remoteRenderer,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  objectFit: _remoteIsScreenSharing
+                      ? RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                      : RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 ),
               )
             else
@@ -340,8 +407,8 @@ class _CallScreenState extends State<CallScreen> {
                 ),
               ),
 
-            // Local Video (Picture-in-picture) khi gọi video
-            if (isVideo)
+            // Local Video (Picture-in-picture) khi gọi video hoặc đang chia sẻ màn hình
+            if (isVideo || _webrtcService.isScreenSharing)
               Positioned(
                 top: 20,
                 right: 20,
@@ -356,9 +423,53 @@ class _CallScreenState extends State<CallScreen> {
                     ),
                     child: RTCVideoView(
                       _localRenderer,
-                      mirror: true,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      mirror: !_webrtcService.isScreenSharing,
+                      objectFit: _webrtcService.isScreenSharing
+                          ? RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                          : RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
+                  ),
+                ),
+              ),
+
+            // Thông báo đang chia sẻ màn hình
+            if (_webrtcService.isScreenSharing)
+              Positioned(
+                top: 78,
+                left: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(220),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.screen_share, color: Colors.white, size: 14),
+                      SizedBox(width: 6),
+                      Text('Bạn đang chia sẻ màn hình', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            if (_remoteIsScreenSharing)
+              Positioned(
+                top: 78,
+                left: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent.withAlpha(220),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.screen_share, color: Colors.white, size: 14),
+                      const SizedBox(width: 6),
+                      Text('${widget.remoteUserName} đang chia sẻ màn hình', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 ),
               ),

@@ -46,8 +46,21 @@ class WebRtcService {
   MediaStream? get remoteStream => _remoteStream;
 
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
+    final audioConstraints = <String, dynamic>{
+      'echoCancellation': true,
+      'noiseSuppression': true,
+      'autoGainControl': true,
+      'googEchoCancellation': true,
+      'googEchoCancellation2': true,
+      'googNoiseSuppression': true,
+      'googAutoGainControl': true,
+      'googAutoGainControl2': true,
+      'googHighpassFilter': true,
+      'googTypingNoiseDetection': true,
+    };
+
     final mediaConstraints = <String, dynamic>{
-      'audio': true,
+      'audio': audioConstraints,
       'video': isVideo
           ? {
               'facingMode': 'user',
@@ -390,11 +403,12 @@ class WebRtcService {
   Future<bool> startScreenSharing({
     required String callId,
     required RTCVideoRenderer localRenderer,
+    bool shareDeviceAudio = false,
   }) async {
     try {
       final mediaConstraints = <String, dynamic>{
         'video': true,
-        'audio': false,
+        'audio': shareDeviceAudio,
       };
 
       _screenStream = await navigator.mediaDevices.getDisplayMedia(mediaConstraints);
@@ -402,12 +416,31 @@ class WebRtcService {
 
       if (screenTrack != null && _peerConnection != null) {
         final senders = await _peerConnection!.getSenders();
+        bool videoSenderFound = false;
         for (var sender in senders) {
           if (sender.track?.kind == 'video') {
             await sender.replaceTrack(screenTrack);
+            videoSenderFound = true;
           }
         }
+        if (!videoSenderFound) {
+          await _peerConnection!.addTrack(screenTrack, _screenStream!);
+        }
         localRenderer.srcObject = _screenStream;
+      }
+
+      // Đảm bảo micro từ localStream vẫn bật để 2 bên tiếp tục đàm thoại
+      _localStream?.getAudioTracks().forEach((track) {
+        track.enabled = true;
+        try {
+          Helper.setMicrophoneMute(false, track);
+        } catch (_) {}
+      });
+
+      // Nếu chia sẻ âm thanh thiết bị (nhạc / video), gửi kèm track âm thanh đó
+      final screenAudioTrack = _screenStream?.getAudioTracks().firstOrNull;
+      if (screenAudioTrack != null && _peerConnection != null) {
+        await _peerConnection!.addTrack(screenAudioTrack, _screenStream!);
       }
 
       _isScreenSharing = true;
@@ -431,7 +464,12 @@ class WebRtcService {
     required RTCVideoRenderer localRenderer,
   }) async {
     try {
-      _screenStream?.getTracks().forEach((track) => track.stop());
+      _screenStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      _screenStream?.dispose();
       _screenStream = null;
 
       final cameraTrack = _localStream?.getVideoTracks().firstOrNull;
@@ -461,19 +499,52 @@ class WebRtcService {
       });
     } catch (_) {}
 
-    _screenStream?.getTracks().forEach((track) => track.stop());
-    _screenStream?.dispose();
+    // 1. Vô hiệu hóa toàn bộ callback để không bị đơ hoặc gọi chéo trong lúc hủy
+    try {
+      _peerConnection?.onIceCandidate = null;
+      _peerConnection?.onTrack = null;
+      _peerConnection?.onAddStream = null;
+      _peerConnection?.onIceConnectionState = null;
+    } catch (_) {}
+
+    // 2. Dừng stream chia sẻ màn hình
+    try {
+      _screenStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      _screenStream?.dispose();
+    } catch (_) {}
     _screenStream = null;
     _isScreenSharing = false;
 
-    _localStream?.getTracks().forEach((track) => track.stop());
-    _localStream?.dispose();
+    // 3. Dừng stream local
+    try {
+      _localStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      _localStream?.dispose();
+    } catch (_) {}
     _localStream = null;
 
-    _remoteStream?.dispose();
+    // 4. Giải phóng remote stream
+    try {
+      _remoteStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      _remoteStream?.dispose();
+    } catch (_) {}
     _remoteStream = null;
 
-    await _peerConnection?.close();
+    // 5. Đóng RTCPeerConnection an toàn
+    try {
+      await _peerConnection?.close();
+    } catch (_) {}
     _peerConnection = null;
   }
 }
