@@ -15,6 +15,12 @@ class UserModel {
   final double? latitude;
   final double? longitude;
 
+  final List<String> friends;
+  final List<String> blockedUsers;
+  final bool allowSearchByName;
+  final bool allowSearchByEmail;
+  final bool allowSearchById;
+
   UserModel({
     required this.uid,
     required this.email,
@@ -29,6 +35,11 @@ class UserModel {
     this.hometown = '',
     this.latitude,
     this.longitude,
+    this.friends = const [],
+    this.blockedUsers = const [],
+    this.allowSearchByName = true,
+    this.allowSearchByEmail = true,
+    this.allowSearchById = true,
   });
 
   Map<String, dynamic> toMap() {
@@ -46,6 +57,11 @@ class UserModel {
       'hometown': hometown,
       'latitude': latitude,
       'longitude': longitude,
+      'friends': friends,
+      'blockedUsers': blockedUsers,
+      'allowSearchByName': allowSearchByName,
+      'allowSearchByEmail': allowSearchByEmail,
+      'allowSearchById': allowSearchById,
     };
   }
 
@@ -57,15 +73,28 @@ class UserModel {
       photoUrl: map['photoUrl'] ?? '',
       statusMessage: map['statusMessage'] ?? 'Xin chào! Tôi đang dùng KINI CHAT.',
       isOnline: map['isOnline'] ?? false,
-      lastSeen: map['lastSeen'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['lastSeen'])
-          : DateTime.now(),
+      lastSeen: () {
+        final ls = map['lastSeen'];
+        if (ls == null) return DateTime.now();
+        if (ls is int) return DateTime.fromMillisecondsSinceEpoch(ls);
+        if (ls is String) return DateTime.tryParse(ls) ?? DateTime.now();
+        try {
+          return (ls as dynamic).toDate() as DateTime;
+        } catch (_) {
+          return DateTime.now();
+        }
+      }(),
       fcmToken: map['fcmToken'],
       gender: map['gender'] ?? 'Chưa xác định',
       birthYear: map['birthYear'],
       hometown: map['hometown'] ?? '',
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      friends: List<String>.from(map['friends'] ?? []),
+      blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
+      allowSearchByName: map['allowSearchByName'] ?? true,
+      allowSearchByEmail: map['allowSearchByEmail'] ?? true,
+      allowSearchById: map['allowSearchById'] ?? true,
     );
   }
 

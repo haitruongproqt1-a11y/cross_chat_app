@@ -22,10 +22,26 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
   final LocationService _locationService = LocationService();
 
   String _selectedGender = 'Tất cả';
-  String _hometownFilter = '';
-  int? _minBirthYear;
-  int? _maxBirthYear;
+  String _selectedAgeGroup = 'Tất cả';
+  String _hometownFilter = 'Tất cả';
   bool _isLocating = false;
+
+  static const List<String> vietnamProvinces = [
+    'Tất cả',
+    'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ',
+    'An Giang', 'Bà Rịa - Vũng Tàu', 'Bắc Giang', 'Bắc Kạn', 'Bạc Liêu',
+    'Bắc Ninh', 'Bến Tre', 'Bình Định', 'Bình Dương', 'Bình Phước',
+    'Bình Thuận', 'Cà Mau', 'Cao Bằng', 'Đắk Lắk', 'Đắk Nông',
+    'Điện Biên', 'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Giang',
+    'Hà Nam', 'Hà Tĩnh', 'Hải Dương', 'Hậu Giang', 'Hòa Bình',
+    'Hưng Yên', 'Khánh Hòa', 'Kiên Giang', 'Kon Tum', 'Lai Châu',
+    'Lâm Đồng', 'Lạng Sơn', 'Lào Cai', 'Long An', 'Nam Định',
+    'Nghệ An', 'Ninh Bình', 'Ninh Thuận', 'Phú Thọ', 'Phú Yên',
+    'Quảng Bình', 'Quảng Nam', 'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị',
+    'Sóc Trăng', 'Sơn La', 'Tây Ninh', 'Thái Bình', 'Thái Nguyên',
+    'Thanh Hóa', 'Thừa Thiên Huế', 'Tiền Giang', 'Trà Vinh', 'Tuyên Quang',
+    'Vĩnh Long', 'Vĩnh Phúc', 'Yên Bái'
+  ];
 
   void _updateMyLocation() async {
     final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
@@ -148,17 +164,23 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
                 }
 
                 // Lọc theo quê quán
-                if (_hometownFilter.trim().isNotEmpty) {
+                if (_hometownFilter.trim().isNotEmpty && _hometownFilter != 'Tất cả') {
                   final query = _hometownFilter.trim().toLowerCase();
                   users = users.where((u) => u.hometown.toLowerCase().contains(query)).toList();
                 }
 
-                // Lọc theo năm sinh
-                if (_minBirthYear != null) {
-                  users = users.where((u) => (u.birthYear ?? 0) >= _minBirthYear!).toList();
-                }
-                if (_maxBirthYear != null) {
-                  users = users.where((u) => (u.birthYear ?? 9999) <= _maxBirthYear!).toList();
+                // Lọc theo độ tuổi
+                if (_selectedAgeGroup != 'Tất cả') {
+                  final nowYear = DateTime.now().year;
+                  users = users.where((u) {
+                    if (u.birthYear == null) return false;
+                    final age = nowYear - u.birthYear!;
+                    if (_selectedAgeGroup == '18 - 25 tuổi') return age >= 18 && age <= 25;
+                    if (_selectedAgeGroup == '26 - 35 tuổi') return age >= 26 && age <= 35;
+                    if (_selectedAgeGroup == '36 - 50 tuổi') return age >= 36 && age <= 50;
+                    if (_selectedAgeGroup == 'Trên 50 tuổi') return age > 50;
+                    return true;
+                  }).toList();
                 }
 
                 // Tính khoảng cách và sắp xếp từ gần đến xa
@@ -283,83 +305,169 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
 
   void _showFilterDialog() {
     String tempGender = _selectedGender;
-    final hometownCtrl = TextEditingController(text: _hometownFilter);
+    String tempAge = _selectedAgeGroup;
+    String tempProvince = _hometownFilter;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Bộ Lọc Bạn Bè Quanh Đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  const Text('Giới tính:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Wrap(
-                    spacing: 8,
-                    children: ['Tất cả', 'Nam', 'Nữ', 'Khác'].map((g) {
-                      return ChoiceChip(
-                        label: Text(g),
-                        selected: tempGender == g,
-                        onSelected: (val) {
-                          if (val) setModalState(() => tempGender = g);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: hometownCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Quê quán / Tỉnh thành',
-                      hintText: 'Ví dụ: Hà Nội, Đà Nẵng, TP.HCM...',
-                      prefixIcon: Icon(Icons.home_outlined),
+            return SafeArea(
+              top: false,
+              bottom: true,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text('Bộ Lọc Bạn Bè Quanh Đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+
+                        // Lọc theo Giới tính
+                        const Text('Giới tính:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: ['Tất cả', 'Nam', 'Nữ', 'Khác'].map((g) {
+                            final isSel = tempGender == g;
+                            return ChoiceChip(
+                              label: Text(g),
+                              selected: isSel,
+                              selectedColor: Colors.blueAccent,
+                              labelStyle: TextStyle(color: isSel ? Colors.white : null),
+                              onSelected: (val) {
+                                if (val) setModalState(() => tempGender = g);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Lọc theo Độ tuổi
+                        const Text('Độ tuổi:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: ['Tất cả', '18 - 25 tuổi', '26 - 35 tuổi', '36 - 50 tuổi', 'Trên 50 tuổi'].map((a) {
+                            final isSel = tempAge == a;
+                            return ChoiceChip(
+                              label: Text(a),
+                              selected: isSel,
+                              selectedColor: Colors.blueAccent,
+                              labelStyle: TextStyle(color: isSel ? Colors.white : null),
+                              onSelected: (val) {
+                                if (val) setModalState(() => tempAge = a);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Lọc theo Tỉnh thành phố (63 tỉnh thành VN)
+                        const Text('Quê quán / Tỉnh thành:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade400, width: 0.8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: vietnamProvinces.contains(tempProvince) ? tempProvince : 'Tất cả',
+                              icon: const Icon(Icons.arrow_drop_down),
+                              items: vietnamProvinces.map((prov) {
+                                return DropdownMenuItem<String>(
+                                  value: prov,
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.location_city, size: 18, color: Colors.blueGrey),
+                                      const SizedBox(width: 8),
+                                      Text(prov),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setModalState(() => tempProvince = val);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Nút Đặt lại và Áp dụng (Có đệm phím ảo chuẩn Android)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedGender = 'Tất cả';
+                                    _selectedAgeGroup = 'Tất cả';
+                                    _hometownFilter = 'Tất cả';
+                                  });
+                                  Navigator.pop(ctx);
+                                },
+                                child: const Text('Đặt lại', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedGender = tempGender;
+                                    _selectedAgeGroup = tempAge;
+                                    _hometownFilter = tempProvince;
+                                  });
+                                  Navigator.pop(ctx);
+                                },
+                                child: const Text('Áp dụng', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedGender = 'Tất cả';
-                              _hometownFilter = '';
-                              _minBirthYear = null;
-                              _maxBirthYear = null;
-                            });
-                            Navigator.pop(ctx);
-                          },
-                          child: const Text('Đặt lại'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedGender = tempGender;
-                              _hometownFilter = hometownCtrl.text;
-                            });
-                            Navigator.pop(ctx);
-                          },
-                          child: const Text('Áp dụng'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             );
           },

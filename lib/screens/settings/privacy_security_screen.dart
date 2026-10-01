@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/security_service.dart';
+import '../../services/chat_service.dart';
+import '../../providers/auth_provider.dart';
 
 class PrivacySecurityScreen extends StatefulWidget {
   const PrivacySecurityScreen({super.key});
@@ -12,6 +16,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
   bool _readReceipts = true;
   bool _lastSeen = true;
   final SecurityService _security = SecurityService();
+  final ChatService _chatService = ChatService();
 
   void _clearData() async {
     final confirm = await showDialog<bool>(
@@ -83,6 +88,89 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Text(
+              'TÌM KIẾM & KẾT BẠN',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+          ),
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final user = auth.currentUser;
+              if (user == null) return const SizedBox.shrink();
+
+              return StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+                  final allowName = data?['allowSearchByName'] ?? true;
+                  final allowEmail = data?['allowSearchByEmail'] ?? true;
+                  final allowId = data?['allowSearchById'] ?? true;
+                  final blocked = List<String>.from(data?['blockedUsers'] ?? []);
+
+                  return Column(
+                    children: [
+                      SwitchListTile(
+                        value: allowName,
+                        title: const Text('Cho phép tìm kiếm bằng Tên'),
+                        subtitle: const Text('Người khác có thể tìm thấy bạn khi nhập tên'),
+                        onChanged: (val) async {
+                          await _chatService.updateSearchPrivacy(
+                            currentUserId: user.uid,
+                            allowSearchByName: val,
+                          );
+                        },
+                      ),
+                      SwitchListTile(
+                        value: allowEmail,
+                        title: const Text('Cho phép tìm kiếm bằng Gmail'),
+                        subtitle: const Text('Người khác có thể tìm thấy bạn qua địa chỉ Gmail'),
+                        onChanged: (val) async {
+                          await _chatService.updateSearchPrivacy(
+                            currentUserId: user.uid,
+                            allowSearchByEmail: val,
+                          );
+                        },
+                      ),
+                      SwitchListTile(
+                        value: allowId,
+                        title: const Text('Cho phép tìm kiếm bằng ID cá nhân'),
+                        subtitle: const Text('Người khác có thể tìm thấy bạn qua mã ID KINI'),
+                        onChanged: (val) async {
+                          await _chatService.updateSearchPrivacy(
+                            currentUserId: user.uid,
+                            allowSearchById: val,
+                          );
+                        },
+                      ),
+                      const Divider(),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'CHẶN TIN NHẮN & CUỘC GỌI',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.block, color: Colors.redAccent),
+                        title: const Text('Danh sách đã chặn'),
+                        subtitle: Text('${blocked.length} người dùng đang bị chặn'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          _showBlockedUsersDialog(context, user.uid, blocked);
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
               'KIỂM SOÁT DỮ LIỆU THIẾT BỊ',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
             ),
@@ -95,6 +183,64 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showBlockedUsersDialog(BuildContext context, String currentUserId, List<String> blockedIds) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        if (blockedIds.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(
+              child: Text('Bạn chưa chặn người dùng nào.', style: TextStyle(color: Colors.grey)),
+            ),
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Danh Sách Đang Bị Chặn', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: blockedIds.length,
+                  itemBuilder: (context, index) {
+                    final uid = blockedIds[index];
+                    return ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.redAccent,
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
+                      title: Text('ID: $uid', style: const TextStyle(fontSize: 13)),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          await _chatService.unblockUser(currentUserId: currentUserId, targetUserId: uid);
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã bỏ chặn người dùng')),
+                            );
+                          }
+                        },
+                        child: const Text('Bỏ chặn'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

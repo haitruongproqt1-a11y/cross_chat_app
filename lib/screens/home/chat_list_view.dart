@@ -137,16 +137,18 @@ class _ChatListViewState extends State<ChatListView> {
                     final room = filteredRooms[index];
                     final isSelected = chatProvider.activeRoom?.id == room.id;
 
+                    final displayName = room.getDisplayName(currentUser.uid);
+
                     return ListTile(
                       selected: isSelected,
                       selectedTileColor: Theme.of(context).colorScheme.primary.withAlpha(20),
                       leading: AvatarWidget(
                         photoUrl: room.photoUrl,
-                        name: room.name,
+                        name: displayName,
                         radius: 24,
                       ),
                       title: Text(
-                        room.name,
+                        displayName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

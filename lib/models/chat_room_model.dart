@@ -49,7 +49,27 @@ class ChatRoomModel {
     };
   }
 
+  String getDisplayName(String currentUserId) {
+    if (type == ChatRoomType.direct) {
+      final otherUid = memberIds.firstWhere((id) => id != currentUserId, orElse: () => '');
+      if (otherUid.isNotEmpty && memberNames.containsKey(otherUid)) {
+        return memberNames[otherUid]!;
+      }
+    }
+    return name;
+  }
+
   factory ChatRoomModel.fromMap(Map<String, dynamic> map, String id) {
+    DateTime? parseDate(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+      if (val is String) return DateTime.tryParse(val);
+      try {
+        return (val as dynamic).toDate() as DateTime?;
+      } catch (_) {}
+      return null;
+    }
+
     return ChatRoomModel(
       id: id,
       name: map['name'] ?? '',
@@ -58,15 +78,11 @@ class ChatRoomModel {
       memberIds: List<String>.from(map['memberIds'] ?? []),
       memberNames: Map<String, String>.from(map['memberNames'] ?? {}),
       lastMessage: map['lastMessage'],
-      lastMessageTime: map['lastMessageTime'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['lastMessageTime'])
-          : null,
+      lastMessageTime: parseDate(map['lastMessageTime']),
       lastMessageSenderId: map['lastMessageSenderId'],
       unreadCount: map['unreadCount'] ?? 0,
       createdBy: map['createdBy'],
-      createdAt: map['createdAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
-          : DateTime.now(),
+      createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/chat_room_model.dart';
 import '../../models/message_model.dart';
 import '../../models/call_model.dart';
@@ -154,7 +155,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
-  void _startCall(CallType type) {
+  void _startCall(CallType type) async {
     final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (currentUser == null) return;
 
@@ -177,12 +178,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       return;
     }
 
+    // Kiểm tra xem có bị chặn hay không
+    final myDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+    final myBlocked = List<String>.from(myDoc.data()?['blockedUsers'] ?? []);
+    if (myBlocked.contains(receiverId)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bạn đã chặn người này. Hãy bỏ chặn trước khi gọi.')),
+        );
+      }
+      return;
+    }
+
+    final otherDoc = await FirebaseFirestore.instance.collection('users').doc(receiverId).get();
+    final otherBlocked = List<String>.from(otherDoc.data()?['blockedUsers'] ?? []);
+    if (otherBlocked.contains(currentUser.uid)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể gọi cho người này.')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CallScreen(
           callId: 'call_${widget.room.id}_${DateTime.now().millisecondsSinceEpoch}',
-          remoteUserName: widget.room.name,
+          remoteUserName: widget.room.getDisplayName(currentUser.uid),
           callType: type,
           isCaller: true,
           callerId: currentUser.uid,
@@ -197,187 +222,358 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Widget build(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;
     final theme = Theme.of(context);
+    final isDirect = widget.room.type == ChatRoomType.direct;
+    final otherUserId = isDirect
+        ? widget.room.memberIds.firstWhere((id) => id != currentUser?.uid, orElse: () => '')
+        : '';
+    final roomDisplayName = widget.room.getDisplayName(currentUser?.uid ?? '');
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            AvatarWidget(
-              photoUrl: widget.room.photoUrl,
-              name: widget.room.name,
-              radius: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.room.name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    widget.room.type == ChatRoomType.group
-                        ? '${widget.room.memberIds.length} thành viên'
-                        : 'Đang hoạt động',
-                    style: const TextStyle(fontSize: 12, color: Colors.green),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.call_outlined),
-            tooltip: 'Gọi thoại',
-            onPressed: () => _startCall(CallType.audio),
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined),
-            tooltip: 'Gọi Video',
-            onPressed: () => _startCall(CallType.video),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'clear') {
-                _chatService.deleteRoom(widget.room.id);
-                Navigator.pop(context);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline, color: Colors.redAccent),
-                    SizedBox(width: 8),
-                    Text('Xóa cuộc trò chuyện', style: TextStyle(color: Colors.redAccent)),
-                  ],
+    return StreamBuilder<DocumentSnapshot>(
+      stream: currentUser != null
+          ? FirebaseFirestore.instance.collection('users').doc(currentUser.uid).snapshots()
+          : null,
+      builder: (context, mySnapshot) {
+        final myData = mySnapshot.data?.data() as Map<String, dynamic>?;
+        final myFriends = List<String>.from(myData?['friends'] ?? []);
+        final myBlocked = List<String>.from(myData?['blockedUsers'] ?? []);
+        final isFriend = myFriends.contains(otherUserId);
+        final isBlockedByMe = myBlocked.contains(otherUserId);
+
+        return Scaffold(
+          appBar: AppBar(
+            titleSpacing: 0,
+            title: Row(
+              children: [
+                AvatarWidget(
+                  photoUrl: widget.room.photoUrl,
+                  name: roomDisplayName,
+                  radius: 18,
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (_isUploading)
-            const LinearProgressIndicator(minHeight: 3),
-
-          // Danh sách tin nhắn Realtime
-          Expanded(
-            child: StreamBuilder<List<MessageModel>>(
-              stream: _chatService.getMessages(widget.room.id),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final messages = snapshot.data ?? [];
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
-                        const SizedBox(height: 12),
-                        const Text('Chưa có tin nhắn nào. Hãy gửi lời chào đầu tiên!', style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  reverse: true,
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final isMe = msg.senderId == currentUser?.uid;
-                    return MessageBubble(
-                      message: msg,
-                      isMe: isMe,
-                      roomId: widget.room.id,
-                      onRecall: () async {
-                        await _chatService.recallMessage(widget.room.id, msg.id);
-                      },
-                      onDelete: () async {
-                        await _chatService.deleteMessage(widget.room.id, msg.id);
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-
-          // Khung nhập tin nhắn
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(10),
-                  offset: const Offset(0, -1),
-                  blurRadius: 4,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        roomDisplayName,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        widget.room.type == ChatRoomType.group
+                            ? '${widget.room.memberIds.length} thành viên'
+                            : (isBlockedByMe ? 'Đã bị chặn' : 'Đang hoạt động'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isBlockedByMe ? Colors.redAccent : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    tooltip: 'Đính kèm tệp, ảnh hoặc vị trí',
-                    color: theme.colorScheme.primary,
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => MediaAttachmentSheet(
-                          onActionSelected: _handleAttachmentAction,
-                        ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.call_outlined),
+                tooltip: 'Gọi thoại',
+                onPressed: () => _startCall(CallType.audio),
+              ),
+              IconButton(
+                icon: const Icon(Icons.videocam_outlined),
+                tooltip: 'Gọi Video',
+                onPressed: () => _startCall(CallType.video),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (currentUser == null) return;
+                  if (value == 'add_friend') {
+                    await _chatService.addFriend(currentUserId: currentUser.uid, friendUserId: otherUserId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã thêm bạn bè thành công!')),
                       );
-                    },
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      textCapitalization: TextCapitalization.sentences,
-                      maxLines: 4,
-                      minLines: 1,
-                      decoration: InputDecoration(
-                        hintText: 'Nhập tin nhắn bảo mật...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+                    }
+                  } else if (value == 'remove_friend') {
+                    await _chatService.removeFriend(currentUserId: currentUser.uid, friendUserId: otherUserId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã xóa khỏi danh bạ bạn bè')),
+                      );
+                    }
+                  } else if (value == 'block') {
+                    await _chatService.blockUser(currentUserId: currentUser.uid, targetUserId: otherUserId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã chặn tin nhắn và cuộc gọi của người này')),
+                      );
+                    }
+                  } else if (value == 'unblock') {
+                    await _chatService.unblockUser(currentUserId: currentUser.uid, targetUserId: otherUserId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã bỏ chặn thành công')),
+                      );
+                    }
+                  } else if (value == 'clear') {
+                    _chatService.deleteRoom(widget.room.id);
+                    Navigator.pop(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (isDirect && otherUserId.isNotEmpty) ...[
+                    if (!isFriend)
+                      const PopupMenuItem(
+                        value: 'add_friend',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_outlined, color: Colors.blueAccent),
+                            SizedBox(width: 8),
+                            Text('Thêm vào danh bạ (Kết bạn)'),
+                          ],
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        filled: true,
+                      )
+                    else
+                      const PopupMenuItem(
+                        value: 'remove_friend',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_remove_outlined, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Xóa khỏi danh bạ bạn bè'),
+                          ],
+                        ),
                       ),
-                      onSubmitted: (_) => _sendTextMessage(),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  CircleAvatar(
-                    backgroundColor: theme.colorScheme.primary,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                      tooltip: 'Gửi',
-                      onPressed: _sendTextMessage,
+                    if (!isBlockedByMe)
+                      const PopupMenuItem(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            Icon(Icons.block, color: Colors.redAccent),
+                            SizedBox(width: 8),
+                            Text('Chặn người này'),
+                          ],
+                        ),
+                      )
+                    else
+                      const PopupMenuItem(
+                        value: 'unblock',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle_outline, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('Bỏ chặn người này'),
+                          ],
+                        ),
+                      ),
+                  ],
+                  const PopupMenuItem(
+                    value: 'clear',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.redAccent),
+                        SizedBox(width: 8),
+                        Text('Xóa cuộc trò chuyện', style: TextStyle(color: Colors.redAccent)),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              if (_isUploading)
+                const LinearProgressIndicator(minHeight: 3),
+
+              // Banner kết bạn nếu chưa có trong danh bạ
+              if (isDirect && otherUserId.isNotEmpty && !isFriend && currentUser != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: Colors.blue.withAlpha(25),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_add_alt, size: 20, color: Colors.blueAccent),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Người này chưa có trong danh bạ',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          minimumSize: Size.zero,
+                        ),
+                        icon: const Icon(Icons.person_add, size: 16),
+                        label: const Text('Kết bạn', style: TextStyle(fontSize: 12)),
+                        onPressed: () async {
+                          await _chatService.addFriend(
+                            currentUserId: currentUser.uid,
+                            friendUserId: otherUserId,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã thêm vào danh bạ bạn bè thành công!')),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Danh sách tin nhắn Realtime
+              Expanded(
+                child: StreamBuilder<List<MessageModel>>(
+                  stream: _chatService.getMessages(widget.room.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final messages = snapshot.data ?? [];
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
+                            const SizedBox(height: 12),
+                            const Text('Chưa có tin nhắn nào. Hãy gửi lời chào đầu tiên!', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      reverse: true,
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final isMe = msg.senderId == currentUser?.uid;
+                        return MessageBubble(
+                          message: msg,
+                          isMe: isMe,
+                          roomId: widget.room.id,
+                          onRecall: () async {
+                            await _chatService.recallMessage(widget.room.id, msg.id);
+                          },
+                          onDelete: () async {
+                            await _chatService.deleteMessage(widget.room.id, msg.id);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+
+              // Khung nhập tin nhắn hoặc Thông báo chặn
+              if (isBlockedByMe)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.red.withAlpha(20),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.block, color: Colors.redAccent),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Bạn đã chặn người dùng này.',
+                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          if (currentUser != null) {
+                            await _chatService.unblockUser(
+                              currentUserId: currentUser.uid,
+                              targetUserId: otherUserId,
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Đã bỏ chặn người dùng này')),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Bỏ chặn', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(10),
+                        offset: const Offset(0, -1),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          tooltip: 'Đính kèm tệp, ảnh hoặc vị trí',
+                          color: theme.colorScheme.primary,
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => MediaAttachmentSheet(
+                                onActionSelected: _handleAttachmentAction,
+                              ),
+                            );
+                          },
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            textCapitalization: TextCapitalization.sentences,
+                            maxLines: 4,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              hintText: 'Nhập tin nhắn bảo mật...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              filled: true,
+                            ),
+                            onSubmitted: (_) => _sendTextMessage(),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        CircleAvatar(
+                          backgroundColor: theme.colorScheme.primary,
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                            tooltip: 'Gửi',
+                            onPressed: _sendTextMessage,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

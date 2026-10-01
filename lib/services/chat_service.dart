@@ -13,15 +13,20 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SecurityService _security = SecurityService();
 
-  // Stream of chat rooms for current user
+  // Stream of chat rooms for current user (sắp xếp client-side không cần composite index)
   Stream<List<ChatRoomModel>> getChatRooms(String currentUserId) {
     return _firestore
         .collection('chat_rooms')
         .where('memberIds', arrayContains: currentUserId)
-        .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => ChatRoomModel.fromMap(doc.data(), doc.id)).toList();
+      final list = snapshot.docs.map((doc) => ChatRoomModel.fromMap(doc.data(), doc.id)).toList();
+      list.sort((a, b) {
+        final timeA = a.lastMessageTime ?? a.createdAt;
+        final timeB = b.lastMessageTime ?? b.createdAt;
+        return timeB.compareTo(timeA);
+      });
+      return list;
     });
   }
 
@@ -103,10 +108,63 @@ class ChatService {
         otherUser.uid: otherUser.displayName,
       },
       createdAt: DateTime.now(),
+      lastMessage: 'Bắt đầu cuộc trò chuyện mới',
+      lastMessageTime: DateTime.now(),
+      lastMessageSenderId: currentUser.uid,
     );
 
     await newRoomRef.set(newRoom.toMap());
     return newRoomRef.id;
+  }
+
+  // Thêm bạn bè
+  Future<void> addFriend({required String currentUserId, required String friendUserId}) async {
+    await _firestore.collection('users').doc(currentUserId).update({
+      'friends': FieldValue.arrayUnion([friendUserId]),
+    });
+    await _firestore.collection('users').doc(friendUserId).update({
+      'friends': FieldValue.arrayUnion([currentUserId]),
+    });
+  }
+
+  // Xóa bạn bè
+  Future<void> removeFriend({required String currentUserId, required String friendUserId}) async {
+    await _firestore.collection('users').doc(currentUserId).update({
+      'friends': FieldValue.arrayRemove([friendUserId]),
+    });
+    await _firestore.collection('users').doc(friendUserId).update({
+      'friends': FieldValue.arrayRemove([currentUserId]),
+    });
+  }
+
+  // Chặn người dùng (tin nhắn & cuộc gọi)
+  Future<void> blockUser({required String currentUserId, required String targetUserId}) async {
+    await _firestore.collection('users').doc(currentUserId).update({
+      'blockedUsers': FieldValue.arrayUnion([targetUserId]),
+    });
+  }
+
+  // Bỏ chặn người dùng
+  Future<void> unblockUser({required String currentUserId, required String targetUserId}) async {
+    await _firestore.collection('users').doc(currentUserId).update({
+      'blockedUsers': FieldValue.arrayRemove([targetUserId]),
+    });
+  }
+
+  // Cập nhật quyền riêng tư tìm kiếm
+  Future<void> updateSearchPrivacy({
+    required String currentUserId,
+    bool? allowSearchByName,
+    bool? allowSearchByEmail,
+    bool? allowSearchById,
+  }) async {
+    final Map<String, dynamic> updates = {};
+    if (allowSearchByName != null) updates['allowSearchByName'] = allowSearchByName;
+    if (allowSearchByEmail != null) updates['allowSearchByEmail'] = allowSearchByEmail;
+    if (allowSearchById != null) updates['allowSearchById'] = allowSearchById;
+    if (updates.isNotEmpty) {
+      await _firestore.collection('users').doc(currentUserId).update(updates);
+    }
   }
 
   // Create a new Group Chat

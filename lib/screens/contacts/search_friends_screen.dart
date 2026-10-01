@@ -48,11 +48,20 @@ class _SearchFriendsScreenState extends State<SearchFriendsScreen> {
       query: q,
     );
 
-    // Lọc theo searchType nếu có
+    // Lọc theo searchType và quyền riêng tư cài đặt của từng người dùng
     final filtered = results.where((u) {
-      if (_searchType == 'email') return u.email.toLowerCase().contains(q.toLowerCase());
-      if (_searchType == 'name') return u.displayName.toLowerCase().contains(q.toLowerCase());
-      if (_searchType == 'id') return u.uid.toLowerCase().contains(q.toLowerCase());
+      if (_searchType == 'email') {
+        if (!u.allowSearchByEmail) return false;
+        return u.email.toLowerCase().contains(q.toLowerCase());
+      }
+      if (_searchType == 'name') {
+        if (!u.allowSearchByName) return false;
+        return u.displayName.toLowerCase().contains(q.toLowerCase());
+      }
+      if (_searchType == 'id') {
+        if (!u.allowSearchById) return false;
+        return u.uid.toLowerCase().contains(q.toLowerCase());
+      }
       return true;
     }).toList();
 
@@ -354,15 +363,38 @@ class _SearchFriendsScreenState extends State<SearchFriendsScreen> {
                                     Text('ID: ${user.uid}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
                                   ],
                                 ),
-                                trailing: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  icon: const Icon(Icons.chat, size: 16),
-                                  label: const Text('Nhắn tin'),
-                                  onPressed: () => _openChatWithUser(user),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.person_add_alt, color: Colors.blueAccent),
+                                      tooltip: 'Kết bạn',
+                                      onPressed: () async {
+                                        final myUid = Provider.of<AuthProvider>(context, listen: false).currentUser?.uid;
+                                        if (myUid != null) {
+                                          await _chatService.addFriend(
+                                            currentUserId: myUid,
+                                            friendUserId: user.uid,
+                                          );
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Đã kết bạn với ${user.displayName}!')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      icon: const Icon(Icons.chat, size: 16),
+                                      label: const Text('Nhắn tin'),
+                                      onPressed: () => _openChatWithUser(user),
+                                    ),
+                                  ],
                                 ),
                               );
                             },

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 import '../utils/constants.dart';
 
 class OtaUpdateService {
@@ -139,32 +140,125 @@ class OtaUpdateService {
             ),
             icon: const Icon(Icons.download),
             label: const Text('Cập nhật OTA ngay'),
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đang mở liên kết tải bản cập nhật mới nhất...'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 3),
-                ),
-              );
-              final uri = Uri.parse(downloadUrl);
-              try {
-                final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                if (!launched) {
-                  await launchUrl(uri, mode: LaunchMode.platformDefault);
-                }
-              } catch (_) {
-                try {
-                  await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-                } catch (err) {
-                  debugPrint('Could not launch update URL: $err');
-                }
-              }
+              _startInAppDownload(context, downloadUrl, newVersion);
             },
           ),
         ],
       ),
+    );
+  }
+
+  void _startInAppDownload(BuildContext context, String downloadUrl, String version) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        double progress = 0.0;
+        int receivedBytes = 0;
+        int totalBytes = 0;
+        String statusText = 'Đang kết nối đến máy chủ GitHub...';
+        bool isDone = false;
+
+        // Bắt đầu tải tệp ngay trong nền
+        Future.microtask(() async {
+          try {
+            final client = http.Client();
+            final request = http.Request('GET', Uri.parse(downloadUrl));
+            final response = await client.send(request);
+
+            totalBytes = response.contentLength ?? 0;
+            final tempDir = Directory.systemTemp;
+            final isApk = downloadUrl.endsWith('.apk');
+            final fileName = isApk ? 'cross_chat_update_v$version.apk' : 'cross_chat_update_v$version.zip';
+            final file = File('${tempDir.path}/$fileName');
+            final sink = file.openWrite();
+
+            await response.stream.listen(
+              (chunk) {
+                receivedBytes += chunk.length;
+                sink.add(chunk);
+                if (totalBytes > 0 && ctx.mounted) {
+                  progress = receivedBytes / totalBytes;
+                  final recMb = (receivedBytes / (1024 * 1024)).toStringAsFixed(1);
+                  final totMb = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
+                  final pct = (progress * 100).toInt();
+                  statusText = 'Đang tải: $recMb MB / $totMb MB ($pct%)';
+                  (ctx as Element).markNeedsBuild();
+                }
+              },
+              cancelOnError: true,
+            ).asFuture();
+
+            await sink.close();
+            isDone = true;
+            statusText = 'Tải hoàn tất 100%! Đang mở cài đặt...';
+            if (ctx.mounted) (ctx as Element).markNeedsBuild();
+
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (ctx.mounted) Navigator.pop(ctx);
+
+            // Mở file để cài đặt ngay bằng OpenFilex (tránh mở Chrome tải lại)
+            if (isApk && Platform.isAndroid) {
+              final result = await OpenFilex.open(file.path);
+              if (result.type != ResultType.done) {
+                final uri = Uri.parse(downloadUrl);
+                try {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } catch (_) {}
+              }
+            } else {
+              final uri = Uri.parse(downloadUrl);
+              try {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (_) {}
+            }
+          } catch (e) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            // Fallback mở trình duyệt tải về
+            final uri = Uri.parse(downloadUrl);
+            try {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } catch (_) {}
+          }
+        });
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  Icon(isDone ? Icons.check_circle : Icons.cloud_download, color: isDone ? Colors.green : Colors.blueAccent),
+                  const SizedBox(width: 10),
+                  const Text('Cập Nhật Trực Tiếp', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(statusText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: progress > 0 ? progress : null,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(isDone ? Colors.green : Colors.blueAccent),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Tải trực tiếp tốc độ cao trong ứng dụng, không cần mở Chrome.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

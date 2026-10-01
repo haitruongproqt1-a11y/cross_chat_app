@@ -192,10 +192,78 @@ class _ContactsViewState extends State<ContactsView> {
                         maxLines: 1,
                         style: TextStyle(color: user.isOnline ? Colors.green : Colors.grey),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.chat_outlined, color: Colors.blue),
-                        tooltip: 'Nhắn tin',
-                        onPressed: () => _startDirectChat(user),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chat_outlined, color: Colors.blue),
+                            tooltip: 'Nhắn tin',
+                            onPressed: () => _startDirectChat(user),
+                          ),
+                          PopupMenuButton<String>(
+                            onSelected: (val) async {
+                              if (val == 'remove') {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Xóa bạn bè'),
+                                    content: Text('Bạn có chắc chắn muốn xóa ${user.displayName} khỏi danh bạ?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: const Text('Xóa', style: TextStyle(color: Colors.redAccent)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await _chatService.removeFriend(
+                                    currentUserId: currentUser.uid,
+                                    friendUserId: user.uid,
+                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Đã xóa ${user.displayName} khỏi danh bạ')),
+                                    );
+                                  }
+                                }
+                              } else if (val == 'block') {
+                                await _chatService.blockUser(
+                                  currentUserId: currentUser.uid,
+                                  targetUserId: user.uid,
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Đã chặn ${user.displayName}')),
+                                  );
+                                }
+                              }
+                            },
+                            itemBuilder: (ctx) => [
+                              const PopupMenuItem(
+                                value: 'remove',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.person_remove_outlined, color: Colors.orange, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Xóa bạn bè'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'block',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.block, color: Colors.redAccent, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Chặn người này', style: TextStyle(color: Colors.redAccent)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       onTap: () => _startDirectChat(user),
                     );

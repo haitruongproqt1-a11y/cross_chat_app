@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'KINI CHAT';
-  static const String appVersion = '1.0.3';
+  static const String appVersion = '1.0.4';
   
   // Định dạng ngày giờ thân thiện theo Tiếng Việt
   static String formatTimestamp(DateTime dateTime) {
