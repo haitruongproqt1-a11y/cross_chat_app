@@ -11,9 +11,8 @@ class OtaUpdateService {
   factory OtaUpdateService() => _instance;
   OtaUpdateService._internal();
 
-  // URL kiểm tra version mặc định trên GitHub (người dùng có thể tùy chỉnh)
-  static String githubRepo = 'haitruongproqt1-a11y/cross_chat_app';
-  static String versionCheckUrl = 'https://raw.githubusercontent.com/$githubRepo/main/version.json';
+  static const String githubRepo = 'haitruongproqt1-a11y/cross_chat_app';
+  static const String versionCheckUrl = 'https://raw.githubusercontent.com/$githubRepo/main/version.json';
 
   Future<void> checkUpdate(BuildContext context, {bool showNoUpdateDialog = false}) async {
     try {
@@ -37,31 +36,74 @@ class OtaUpdateService {
         ),
       );
 
-      final response = await http.get(Uri.parse(versionCheckUrl)).timeout(const Duration(seconds: 8));
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      String? latestVersion;
+      String? releaseNotes;
+      String? otaUrl;
+
+      // 1. Kiểm tra qua raw.githubusercontent.com (có chống cache)
+      try {
+        final rawUri = Uri.parse('$versionCheckUrl?t=$timestamp');
+        final response = await http.get(
+          rawUri,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'User-Agent': 'KINI-Chat-Updater',
+          },
+        ).timeout(const Duration(seconds: 6));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          latestVersion = data['version'];
+          releaseNotes = data['changelog'] ?? data['release_notes'];
+          if (Platform.isAndroid && data['apk_url'] != null) {
+            otaUrl = data['apk_url'];
+          } else {
+            otaUrl = data['ota_package_url'] ?? data['download_url'];
+          }
+        }
+      } catch (_) {}
+
+      // 2. Fallback: Nếu version.json bị cache cũ hoặc lỗi, truy vấn trực tiếp GitHub Releases API
+      if (latestVersion == null || !_isNewerVersion(latestVersion, AppConstants.appVersion)) {
+        try {
+          final relApiUri = Uri.parse('https://api.github.com/repos/$githubRepo/releases/latest?t=$timestamp');
+          final relResponse = await http.get(
+            relApiUri,
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'KINI-Chat-Updater',
+            },
+          ).timeout(const Duration(seconds: 6));
+
+          if (relResponse.statusCode == 200) {
+            final relData = jsonDecode(utf8.decode(relResponse.bodyBytes));
+            final tag = (relData['tag_name'] as String? ?? '').replaceAll('v', '').trim();
+            if (tag.isNotEmpty && _isNewerVersion(tag, AppConstants.appVersion)) {
+              latestVersion = tag;
+              releaseNotes = relData['body'] ?? 'Bản cập nhật mới trên GitHub.';
+              final assets = relData['assets'] as List? ?? [];
+              for (var a in assets) {
+                final name = a['name'] as String? ?? '';
+                if (name.endsWith('.apk')) {
+                  otaUrl = a['browser_download_url'];
+                  break;
+                }
+              }
+              otaUrl ??= 'https://github.com/$githubRepo/releases/download/v$tag/app-arm64-v8a-release.apk';
+            }
+          }
+        } catch (_) {}
+      }
 
       if (context.mounted) Navigator.pop(context); // Đóng loading dialog
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
-        final latestVersion = data['version'] ?? '1.0.0';
-        final releaseNotes = data['changelog'] ?? data['release_notes'] ?? 'Bản vá lỗi và tối ưu hiệu suất.';
-        
-        // Trên Android ưu tiên link tải file APK trực tiếp để cài đặt ngay
-        String otaUrl;
-        if (Platform.isAndroid && data['apk_url'] != null) {
-          otaUrl = data['apk_url'];
-        } else {
-          otaUrl = data['ota_package_url'] ?? data['download_url'] ?? 'https://github.com/$githubRepo/releases';
-        }
-
-        if (_isNewerVersion(latestVersion, AppConstants.appVersion)) {
-          if (context.mounted) {
-            _showUpdateAvailableDialog(context, latestVersion, releaseNotes, otaUrl);
-          }
-        } else {
-          if (showNoUpdateDialog && context.mounted) {
-            _showUpToDateDialog(context);
-          }
+      if (latestVersion != null && _isNewerVersion(latestVersion, AppConstants.appVersion)) {
+        otaUrl ??= 'https://github.com/$githubRepo/releases';
+        if (context.mounted) {
+          _showUpdateAvailableDialog(context, latestVersion, releaseNotes ?? 'Bản vá lỗi và tối ưu hiệu suất.', otaUrl);
         }
       } else {
         if (showNoUpdateDialog && context.mounted) {
@@ -116,15 +158,18 @@ class OtaUpdateService {
             const Text('Phiên bản hiện tại: v${AppConstants.appVersion}', style: TextStyle(color: Colors.grey)),
             Text('Phiên bản mới nhất: v$newVersion', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
             const SizedBox(height: 12),
-            const Text('Nội dung cập nhật (Changelog):', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
+            const Text('Nội dung cập nhật:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
             Container(
+              constraints: const BoxConstraints(maxHeight: 180),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.black.withAlpha(10),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(changelog, style: const TextStyle(fontSize: 13)),
+              child: SingleChildScrollView(
+                child: Text(changelog, style: const TextStyle(fontSize: 13, height: 1.4)),
+              ),
             ),
           ],
         ),
@@ -139,7 +184,7 @@ class OtaUpdateService {
               foregroundColor: Colors.white,
             ),
             icon: const Icon(Icons.download),
-            label: const Text('Cập nhật OTA ngay'),
+            label: const Text('Cập nhật ngay'),
             onPressed: () {
               Navigator.pop(ctx);
               _startInAppDownload(context, downloadUrl, newVersion);
@@ -154,83 +199,114 @@ class OtaUpdateService {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) {
+      builder: (dialogCtx) {
         double progress = 0.0;
         int receivedBytes = 0;
         int totalBytes = 0;
         String statusText = 'Đang kết nối đến máy chủ GitHub...';
         bool isDone = false;
-
-        // Bắt đầu tải tệp ngay trong nền
-        Future.microtask(() async {
-          try {
-            final client = http.Client();
-            final request = http.Request('GET', Uri.parse(downloadUrl));
-            final response = await client.send(request);
-
-            totalBytes = response.contentLength ?? 0;
-            final tempDir = Directory.systemTemp;
-            final isApk = downloadUrl.endsWith('.apk');
-            final fileName = isApk ? 'cross_chat_update_v$version.apk' : 'cross_chat_update_v$version.zip';
-            final file = File('${tempDir.path}/$fileName');
-            final sink = file.openWrite();
-
-            await response.stream.listen(
-              (chunk) {
-                receivedBytes += chunk.length;
-                sink.add(chunk);
-                if (totalBytes > 0 && ctx.mounted) {
-                  progress = receivedBytes / totalBytes;
-                  final recMb = (receivedBytes / (1024 * 1024)).toStringAsFixed(1);
-                  final totMb = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
-                  final pct = (progress * 100).toInt();
-                  statusText = 'Đang tải: $recMb MB / $totMb MB ($pct%)';
-                  (ctx as Element).markNeedsBuild();
-                }
-              },
-              cancelOnError: true,
-            ).asFuture();
-
-            await sink.close();
-            isDone = true;
-            statusText = 'Tải hoàn tất 100%! Đang mở cài đặt...';
-            if (ctx.mounted) (ctx as Element).markNeedsBuild();
-
-            await Future.delayed(const Duration(milliseconds: 500));
-            if (ctx.mounted) Navigator.pop(ctx);
-
-            // Mở file để cài đặt ngay bằng OpenFilex (tránh mở Chrome tải lại)
-            if (isApk && Platform.isAndroid) {
-              final result = await OpenFilex.open(file.path);
-              if (result.type != ResultType.done) {
-                final uri = Uri.parse(downloadUrl);
-                try {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } catch (_) {}
-              }
-            } else {
-              final uri = Uri.parse(downloadUrl);
-              try {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } catch (_) {}
-            }
-          } catch (e) {
-            if (ctx.mounted) Navigator.pop(ctx);
-            // Fallback mở trình duyệt tải về
-            final uri = Uri.parse(downloadUrl);
-            try {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            } catch (_) {}
-          }
-        });
+        bool isCancelled = false;
+        bool hasError = false;
+        HttpClientRequest? activeRequest;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            // Khởi chạy tác vụ tải tệp một lần duy nhất
+            Future.microtask(() async {
+              if (activeRequest != null) return;
+
+              try {
+                final httpClient = HttpClient();
+                httpClient.userAgent = 'Mozilla/5.0 (Android; Mobile; rv:128.0) KINI-Chat';
+                httpClient.connectionTimeout = const Duration(seconds: 15);
+                httpClient.badCertificateCallback = (cert, host, port) => true;
+
+                final request = await httpClient.getUrl(Uri.parse(downloadUrl));
+                activeRequest = request;
+                request.followRedirects = true;
+                request.maxRedirects = 10;
+
+                final response = await request.close().timeout(const Duration(seconds: 20));
+
+                totalBytes = response.contentLength;
+                if (totalBytes <= 0) totalBytes = 35 * 1024 * 1024; // Ước tính nếu server trả chunked
+
+                final tempDir = Directory.systemTemp;
+                final isApk = downloadUrl.endsWith('.apk');
+                final fileName = isApk ? 'cross_chat_update_v$version.apk' : 'cross_chat_update_v$version.zip';
+                final file = File('${tempDir.path}/$fileName');
+                if (await file.exists()) {
+                  await file.delete();
+                }
+                final sink = file.openWrite();
+
+                await for (var chunk in response) {
+                  if (isCancelled) break;
+                  receivedBytes += chunk.length;
+                  sink.add(chunk);
+
+                  if (dialogCtx.mounted) {
+                    setDialogState(() {
+                      progress = (receivedBytes / totalBytes).clamp(0.0, 1.0);
+                      final recMb = (receivedBytes / (1024 * 1024)).toStringAsFixed(1);
+                      final totMb = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
+                      final pct = (progress * 100).toInt();
+                      statusText = 'Đang tải: $recMb MB / $totMb MB ($pct%)';
+                    });
+                  }
+                }
+
+                await sink.flush();
+                await sink.close();
+
+                if (isCancelled) return;
+
+                if (dialogCtx.mounted) {
+                  setDialogState(() {
+                    isDone = true;
+                    statusText = 'Tải hoàn tất 100%! Đang mở trình cài đặt...';
+                  });
+                }
+
+                await Future.delayed(const Duration(milliseconds: 600));
+                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+
+                // Mở file để cài đặt ngay bằng OpenFilex
+                if (isApk && Platform.isAndroid) {
+                  final result = await OpenFilex.open(file.path);
+                  if (result.type != ResultType.done) {
+                    final uri = Uri.parse(downloadUrl);
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (_) {}
+                  }
+                } else {
+                  final uri = Uri.parse(downloadUrl);
+                  try {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } catch (_) {}
+                }
+              } catch (e) {
+                if (isCancelled) return;
+                if (dialogCtx.mounted) {
+                  setDialogState(() {
+                    hasError = true;
+                    statusText = 'Không thể tải trực tiếp. Nhấn bên dưới để mở trình duyệt tải về.';
+                  });
+                }
+              }
+            });
+
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Row(
                 children: [
-                  Icon(isDone ? Icons.check_circle : Icons.cloud_download, color: isDone ? Colors.green : Colors.blueAccent),
+                  Icon(
+                    isDone
+                        ? Icons.check_circle
+                        : (hasError ? Icons.error_outline : Icons.cloud_download),
+                    color: isDone ? Colors.green : (hasError ? Colors.redAccent : Colors.blueAccent),
+                  ),
                   const SizedBox(width: 10),
                   const Text('Cập Nhật Trực Tiếp', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
@@ -239,22 +315,53 @@ class OtaUpdateService {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(statusText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(statusText, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: hasError ? Colors.red : null)),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(
-                    value: progress > 0 ? progress : null,
+                    value: hasError ? 0.0 : (progress > 0 ? progress : null),
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(isDone ? Colors.green : Colors.blueAccent),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isDone ? Colors.green : (hasError ? Colors.red : Colors.blueAccent),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Tải trực tiếp tốc độ cao trong ứng dụng, không cần mở Chrome.',
+                    'Tải trực tiếp tốc độ cao trong ứng dụng.',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
               ),
+              actions: [
+                if (!isDone && !hasError)
+                  TextButton(
+                    onPressed: () {
+                      isCancelled = true;
+                      activeRequest?.abort();
+                      Navigator.pop(dialogCtx);
+                    },
+                    child: const Text('Hủy'),
+                  ),
+                if (hasError) ...[
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx),
+                    child: const Text('Đóng'),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+                    icon: const Icon(Icons.open_in_browser, size: 18),
+                    label: const Text('Mở trình duyệt tải về'),
+                    onPressed: () async {
+                      Navigator.pop(dialogCtx);
+                      final uri = Uri.parse(downloadUrl);
+                      try {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {}
+                    },
+                  ),
+                ],
+              ],
             );
           },
         );
