@@ -57,26 +57,40 @@ class _HomeScreenState extends State<HomeScreen> {
         .where('status', isEqualTo: CallStatus.ringing.name)
         .snapshots()
         .listen((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        final callDoc = snapshot.docs.first;
-        final callId = callDoc.id;
-        final data = callDoc.data();
-
-        if (_activeIncomingCallId == callId) return; // Đang hiển thị cho cuộc gọi này rồi
-
-        _activeIncomingCallId = callId;
-        final callerName = data['callerName'] ?? 'Người dùng KINI';
-        final callTypeStr = data['type'] as String?;
-        final isVideo = callTypeStr == CallType.video.name;
-
-        _showIncomingCallDialog(
-          callId: callId,
-          callerName: callerName,
-          isVideo: isVideo,
-        );
+      if (snapshot.docs.isEmpty) {
+        if (_activeIncomingCallId != null && _incomingCallCtx != null) {
+          if (mounted && Navigator.canPop(_incomingCallCtx!)) {
+            Navigator.pop(_incomingCallCtx!);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Người gọi đã kết thúc cuộc gọi')),
+            );
+          }
+          _activeIncomingCallId = null;
+          _incomingCallCtx = null;
+        }
+        return;
       }
+
+      final callDoc = snapshot.docs.first;
+      final callId = callDoc.id;
+      final data = callDoc.data();
+
+      if (_activeIncomingCallId == callId) return; // Đang hiển thị cho cuộc gọi này rồi
+
+      _activeIncomingCallId = callId;
+      final callerName = data['callerName'] ?? 'Người dùng KINI';
+      final callTypeStr = data['type'] as String?;
+      final isVideo = callTypeStr == CallType.video.name;
+
+      _showIncomingCallDialog(
+        callId: callId,
+        callerName: callerName,
+        isVideo: isVideo,
+      );
     });
   }
+
+  BuildContext? _incomingCallCtx;
 
   void _showIncomingCallDialog({
     required String callId,
@@ -86,7 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        _incomingCallCtx = ctx;
+        return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -136,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: const Text('Từ chối'),
             onPressed: () async {
               _activeIncomingCallId = null;
+              _incomingCallCtx = null;
               Navigator.pop(ctx);
               await FirebaseFirestore.instance.collection('calls').doc(callId).update({
                 'status': CallStatus.rejected.name,
@@ -154,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: const Text('Trả lời'),
             onPressed: () {
               _activeIncomingCallId = null;
+              _incomingCallCtx = null;
               Navigator.pop(ctx);
               Navigator.push(
                 context,
@@ -169,7 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
-      ),
+      );
+      },
     );
   }
 

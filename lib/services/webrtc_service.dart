@@ -3,22 +3,23 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/call_model.dart';
 
-typedef StreamStateCallback = void Function(MediaStream stream);
-
 class WebRtcService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
   MediaStream? _remoteStream;
 
+  VoidCallback? onConnectionConnected;
+  VoidCallback? onConnectionDisconnected;
+
   final Map<String, dynamic> _configuration = {
     'iceServers': [
-      // 1. Google STUN Servers (Ưu tiên kết nối P2P trực tiếp độ trễ thấp, 100% Free)
+      // 1. Google STUN Servers (100% Free P2P)
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
       {'urls': 'stun:stun2.l.google.com:19302'},
 
-      // 2. OpenRelay Free TURN Servers (Trạm chuyển tiếp xuyên tường lửa/Symmetric NAT, 100% Free vĩnh viễn)
+      // 2. OpenRelay Free TURN Servers (Xuyên NAT / Firewall 100% Free)
       {
         'urls': [
           'stun:openrelay.metered.ca:80',
@@ -41,19 +42,24 @@ class WebRtcService {
       'audio': true,
       'video': isVideo
           ? {
-              'mandatory': {
-                'minWidth': '640',
-                'minHeight': '480',
-                'minFrameRate': '30',
-              },
               'facingMode': 'user',
-              'optional': [],
             }
           : false,
     };
 
-    _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-    localRenderer.srcObject = _localStream;
+    try {
+      _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      localRenderer.srcObject = _localStream;
+    } catch (e) {
+      debugPrint('Lỗi mở Camera/Mic: $e');
+      // Thử lại chỉ với audio nếu video không mở được
+      if (isVideo) {
+        try {
+          _localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': false});
+          localRenderer.srcObject = _localStream;
+        } catch (_) {}
+      }
+    }
   }
 
   Future<String> startCall({
@@ -78,10 +84,28 @@ class WebRtcService {
       }
     };
 
+    _peerConnection?.onAddStream = (MediaStream stream) {
+      _remoteStream = stream;
+      remoteRenderer.srcObject = _remoteStream;
+      onConnectionConnected?.call();
+    };
+
     _peerConnection?.onTrack = (RTCTrackEvent event) {
       if (event.streams.isNotEmpty) {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
+        onConnectionConnected?.call();
+      }
+    };
+
+    _peerConnection?.onIceConnectionState = (RTCIceConnectionState state) {
+      debugPrint('WebRTC ICE State: $state');
+      if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
+        onConnectionConnected?.call();
+      } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        onConnectionDisconnected?.call();
       }
     };
 
@@ -154,10 +178,28 @@ class WebRtcService {
       }
     };
 
+    _peerConnection?.onAddStream = (MediaStream stream) {
+      _remoteStream = stream;
+      remoteRenderer.srcObject = _remoteStream;
+      onConnectionConnected?.call();
+    };
+
     _peerConnection?.onTrack = (RTCTrackEvent event) {
       if (event.streams.isNotEmpty) {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
+        onConnectionConnected?.call();
+      }
+    };
+
+    _peerConnection?.onIceConnectionState = (RTCIceConnectionState state) {
+      debugPrint('Receiver ICE State: $state');
+      if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
+        onConnectionConnected?.call();
+      } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
+          state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        onConnectionDisconnected?.call();
       }
     };
 
@@ -240,22 +282,22 @@ class WebRtcService {
           }
         }
         localRenderer.srcObject = _screenStream;
-        _isScreenSharing = true;
-
-        await _firestore.collection('calls').doc(callId).update({
-          'isScreenSharing': true,
-        });
-
-        // Listen for user stopping screen share from OS controls
-        screenTrack.onEnded = () {
-          stopScreenSharing(callId: callId, localRenderer: localRenderer);
-        };
-        return true;
       }
+
+      _isScreenSharing = true;
+      await _firestore.collection('calls').doc(callId).update({
+        'isScreenSharing': true,
+      });
+
+      screenTrack?.onEnded = () {
+        stopScreenSharing(callId: callId, localRenderer: localRenderer);
+      };
+
+      return true;
     } catch (e) {
-      debugPrint('Lỗi khởi động chia sẻ màn hình: $e');
+      debugPrint('Lỗi chia sẻ màn hình: $e');
+      return false;
     }
-    return false;
   }
 
   Future<void> stopScreenSharing({
@@ -263,11 +305,8 @@ class WebRtcService {
     required RTCVideoRenderer localRenderer,
   }) async {
     try {
-      if (_screenStream != null) {
-        _screenStream!.getTracks().forEach((track) => track.stop());
-        await _screenStream!.dispose();
-        _screenStream = null;
-      }
+      _screenStream?.getTracks().forEach((track) => track.stop());
+      _screenStream = null;
 
       final cameraTrack = _localStream?.getVideoTracks().firstOrNull;
       if (cameraTrack != null && _peerConnection != null) {

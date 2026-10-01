@@ -73,12 +73,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
         setState(() => _isUploading = false);
 
-        if (url != null) {
+          if (url != null) {
           await _chatService.sendMessage(
             roomId: widget.room.id,
             sender: currentUser,
             content: 'Hình ảnh',
             type: MessageType.image,
+            mediaUrl: url,
+            fileName: xfile.name,
+          );
+        }
+      }
+    } else if (action == AttachmentAction.video) {
+      final xfile = await _storageService.pickVideo();
+      if (xfile != null) {
+        setState(() => _isUploading = true);
+        final bytes = await xfile.readAsBytes();
+        final url = await _storageService.uploadFile(
+          path: xfile.path,
+          fileName: xfile.name,
+          folder: 'chat_videos/${widget.room.id}',
+          fileBytes: bytes,
+        );
+        setState(() => _isUploading = false);
+
+        if (url != null) {
+          await _chatService.sendMessage(
+            roomId: widget.room.id,
+            sender: currentUser,
+            content: 'Video',
+            type: MessageType.video,
             mediaUrl: url,
             fileName: xfile.name,
           );
@@ -260,7 +284,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg.senderId == currentUser?.uid;
-                    return MessageBubble(message: msg, isMe: isMe);
+                    return MessageBubble(
+                      message: msg,
+                      isMe: isMe,
+                      roomId: widget.room.id,
+                      onRecall: () async {
+                        await _chatService.recallMessage(widget.room.id, msg.id);
+                      },
+                      onDelete: () async {
+                        await _chatService.deleteMessage(widget.room.id, msg.id);
+                      },
+                    );
                   },
                 );
               },

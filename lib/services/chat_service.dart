@@ -34,31 +34,38 @@ class ChatService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final msg = MessageModel.fromMap(doc.data(), doc.id);
-        // Decrypt if it's text message
-        if (msg.type == MessageType.text) {
-          return MessageModel(
-            id: msg.id,
-            senderId: msg.senderId,
-            senderName: msg.senderName,
-            senderAvatar: msg.senderAvatar,
-            content: _security.decryptText(msg.content),
-            type: msg.type,
-            timestamp: msg.timestamp,
-            isRead: msg.isRead,
-            readBy: msg.readBy,
-            mediaUrl: msg.mediaUrl,
-            fileName: msg.fileName,
-            fileSize: msg.fileSize,
-            audioDurationSec: msg.audioDurationSec,
-            latitude: msg.latitude,
-            longitude: msg.longitude,
-            locationAddress: msg.locationAddress,
-          );
-        }
-        return msg;
-      }).toList();
+      return snapshot.docs
+          .map((doc) {
+            final msg = MessageModel.fromMap(doc.data(), doc.id);
+            if (msg.isDeleted) return null;
+
+            final decryptedContent = msg.type == MessageType.text
+                ? _security.decryptForRoom(msg.content, roomId)
+                : msg.content;
+
+            return MessageModel(
+              id: msg.id,
+              senderId: msg.senderId,
+              senderName: msg.senderName,
+              senderAvatar: msg.senderAvatar,
+              content: msg.isRecalled ? 'Tin nhắn đã được thu hồi' : decryptedContent,
+              type: msg.type,
+              timestamp: msg.timestamp,
+              isRead: msg.isRead,
+              readBy: msg.readBy,
+              isRecalled: msg.isRecalled,
+              isDeleted: msg.isDeleted,
+              mediaUrl: msg.mediaUrl,
+              fileName: msg.fileName,
+              fileSize: msg.fileSize,
+              audioDurationSec: msg.audioDurationSec,
+              latitude: msg.latitude,
+              longitude: msg.longitude,
+              locationAddress: msg.locationAddress,
+            );
+          })
+          .whereType<MessageModel>()
+          .toList();
     });
   }
 
@@ -67,7 +74,6 @@ class ChatService {
     required UserModel currentUser,
     required UserModel otherUser,
   }) async {
-    // Deterministic direct room id or query
     final query = await _firestore
         .collection('chat_rooms')
         .where('type', isEqualTo: 'direct')
@@ -81,7 +87,6 @@ class ChatService {
       }
     }
 
-    // Otherwise create new direct room
     final newRoomRef = _firestore.collection('chat_rooms').doc();
     final newRoom = ChatRoomModel(
       id: newRoomRef.id,
@@ -121,7 +126,7 @@ class ChatService {
       memberNames: memberNames,
       createdBy: creator.uid,
       createdAt: DateTime.now(),
-      lastMessage: '${creator.displayName} created the group',
+      lastMessage: '${creator.displayName} đã tạo nhóm',
       lastMessageTime: DateTime.now(),
       lastMessageSenderId: creator.uid,
     );
@@ -146,8 +151,9 @@ class ChatService {
   }) async {
     final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
 
-    // Encrypt text content
-    final secureContent = type == MessageType.text ? _security.encryptText(content) : content;
+    final secureContent = type == MessageType.text
+        ? _security.encryptForRoom(content, roomId)
+        : content;
 
     final message = MessageModel(
       id: msgRef.id,
@@ -171,16 +177,41 @@ class ChatService {
 
     // Update Room's last message
     String previewText = content;
-    if (type == MessageType.image) previewText = '📷 [Image]';
+    if (type == MessageType.image) previewText = '📷 [Hình ảnh]';
     if (type == MessageType.video) previewText = '🎥 [Video]';
-    if (type == MessageType.audio) previewText = '🎤 [Voice message]';
+    if (type == MessageType.audio) previewText = '🎤 [Tin nhắn thoại]';
     if (type == MessageType.file) previewText = '📎 $fileName';
-    if (type == MessageType.location) previewText = '📍 [Location shared]';
+    if (type == MessageType.location) previewText = '📍 [Vị trí ghim]';
 
     await _firestore.collection('chat_rooms').doc(roomId).update({
       'lastMessage': previewText,
       'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
       'lastMessageSenderId': sender.uid,
+    });
+  }
+
+  // Thu hồi tin nhắn (Recall)
+  Future<void> recallMessage(String roomId, String messageId) async {
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'isRecalled': true,
+      'content': 'Tin nhắn đã được thu hồi',
+    });
+  }
+
+  // Xóa tin nhắn (Delete for me/hide)
+  Future<void> deleteMessage(String roomId, String messageId) async {
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'isDeleted': true,
     });
   }
 
@@ -214,6 +245,40 @@ class ChatService {
           .map((doc) => UserModel.fromMap(doc.data(), doc.id))
           .toList();
     });
+  }
+
+  // Tìm kiếm bạn bè chính xác theo Gmail, Tên, hoặc ID cá nhân
+  Future<List<UserModel>> searchUsers({
+    required String currentUserId,
+    required String query,
+  }) async {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return [];
+
+    final snapshot = await _firestore.collection('users').get();
+    final results = <UserModel>[];
+
+    for (var doc in snapshot.docs) {
+      if (doc.id == currentUserId) continue;
+      final data = doc.data();
+      final user = UserModel.fromMap(data, doc.id);
+
+      final matchEmail = user.email.toLowerCase().contains(q);
+      final matchName = user.displayName.toLowerCase().contains(q);
+      final matchId = user.uid.toLowerCase().contains(q);
+
+      if (matchEmail || matchName || matchId) {
+        results.add(user);
+      }
+    }
+    return results;
+  }
+
+  // Lấy thông tin người dùng theo UID (cho tính năng quét QR / ID)
+  Future<UserModel?> getUserById(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    if (!doc.exists || doc.data() == null) return null;
+    return UserModel.fromMap(doc.data()!, doc.id);
   }
 
   // Cập nhật vị trí GPS của người dùng lên Firestore

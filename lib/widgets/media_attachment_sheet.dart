@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 enum AttachmentAction {
   camera,
   gallery,
+  video,
   document,
   location,
 }
@@ -22,7 +23,7 @@ class MediaAttachmentSheet extends StatelessWidget {
       ),
       child: SafeArea(
         child: Wrap(
-          spacing: 24,
+          spacing: 20,
           runSpacing: 20,
           alignment: WrapAlignment.center,
           children: [
@@ -37,8 +38,15 @@ class MediaAttachmentSheet extends StatelessWidget {
               context,
               icon: Icons.photo_library,
               color: Colors.purple,
-              label: 'Thư viện',
+              label: 'Ảnh thư viện',
               action: AttachmentAction.gallery,
+            ),
+            _buildActionItem(
+              context,
+              icon: Icons.videocam,
+              color: Colors.orange,
+              label: 'Gửi Video',
+              action: AttachmentAction.video,
             ),
             _buildActionItem(
               context,

@@ -9,6 +9,7 @@ import '../../widgets/avatar_widget.dart';
 import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../nearby/nearby_friends_screen.dart';
+import '../contacts/search_friends_screen.dart';
 
 class ContactsView extends StatefulWidget {
   final Function(ChatRoomModel)? onRoomSelected;
@@ -75,6 +76,16 @@ class _ContactsViewState extends State<ContactsView> {
         title: const Text('Danh Bạ Bạn Bè', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_add_alt_1, color: Colors.blueAccent),
+            tooltip: 'Tìm kết bạn (Gmail / ID / QR)',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchFriendsScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.radar, color: Colors.blue),
             tooltip: 'Tìm bạn quanh đây',
             onPressed: () {
@@ -101,7 +112,7 @@ class _ContactsViewState extends State<ContactsView> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Colors.blueAccent, Colors.indigoAccent]),
               borderRadius: BorderRadius.circular(12),
@@ -118,6 +129,29 @@ class _ContactsViewState extends State<ContactsView> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const NearbyFriendsScreen()),
+                );
+              },
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blueAccent.withAlpha(40)),
+            ),
+            child: ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Colors.blueAccent,
+                child: Icon(Icons.person_search, color: Colors.white),
+              ),
+              title: const Text('Tìm Kiếm & Kết Bạn', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Tìm bạn bằng Gmail, Tên, ID cá nhân hoặc quét mã QR', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchFriendsScreen()),
                 );
               },
             ),

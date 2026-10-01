@@ -17,6 +17,8 @@ class MessageModel {
   final DateTime timestamp;
   final bool isRead;
   final List<String> readBy;
+  final bool isRecalled;
+  final bool isDeleted;
 
   // Media & Location specific fields
   final String? mediaUrl;
@@ -37,6 +39,8 @@ class MessageModel {
     required this.timestamp,
     this.isRead = false,
     this.readBy = const [],
+    this.isRecalled = false,
+    this.isDeleted = false,
     this.mediaUrl,
     this.fileName,
     this.fileSize,
@@ -57,6 +61,8 @@ class MessageModel {
       'timestamp': timestamp.millisecondsSinceEpoch,
       'isRead': isRead,
       'readBy': readBy,
+      'isRecalled': isRecalled,
+      'isDeleted': isDeleted,
       'mediaUrl': mediaUrl,
       'fileName': fileName,
       'fileSize': fileSize,
@@ -83,6 +89,8 @@ class MessageModel {
           : DateTime.now(),
       isRead: map['isRead'] ?? false,
       readBy: List<String>.from(map['readBy'] ?? []),
+      isRecalled: map['isRecalled'] ?? false,
+      isDeleted: map['isDeleted'] ?? false,
       mediaUrl: map['mediaUrl'],
       fileName: map['fileName'],
       fileSize: map['fileSize'],
