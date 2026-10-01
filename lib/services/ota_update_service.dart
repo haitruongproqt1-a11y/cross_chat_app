@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -43,7 +44,14 @@ class OtaUpdateService {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         final latestVersion = data['version'] ?? '1.0.0';
         final releaseNotes = data['changelog'] ?? data['release_notes'] ?? 'Bản vá lỗi và tối ưu hiệu suất.';
-        final otaUrl = data['ota_package_url'] ?? data['download_url'] ?? 'https://github.com/$githubRepo/releases';
+        
+        // Trên Android ưu tiên link tải file APK trực tiếp để cài đặt ngay
+        String otaUrl;
+        if (Platform.isAndroid && data['apk_url'] != null) {
+          otaUrl = data['apk_url'];
+        } else {
+          otaUrl = data['ota_package_url'] ?? data['download_url'] ?? 'https://github.com/$githubRepo/releases';
+        }
 
         if (_isNewerVersion(latestVersion, AppConstants.appVersion)) {
           if (context.mounted) {
@@ -133,9 +141,25 @@ class OtaUpdateService {
             label: const Text('Cập nhật OTA ngay'),
             onPressed: () async {
               Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đang mở liên kết tải bản cập nhật mới nhất...'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 3),
+                ),
+              );
               final uri = Uri.parse(downloadUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              try {
+                final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (!launched) {
+                  await launchUrl(uri, mode: LaunchMode.platformDefault);
+                }
+              } catch (_) {
+                try {
+                  await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+                } catch (err) {
+                  debugPrint('Could not launch update URL: $err');
+                }
               }
             },
           ),
