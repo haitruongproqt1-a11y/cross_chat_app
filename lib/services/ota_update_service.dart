@@ -10,7 +10,7 @@ class OtaUpdateService {
   OtaUpdateService._internal();
 
   // URL kiểm tra version mặc định trên GitHub (người dùng có thể tùy chỉnh)
-  static String githubRepo = 'haitruongproqt1/cross_chat_app';
+  static String githubRepo = 'haitruongproqt1-a11y/cross_chat_app';
   static String versionCheckUrl = 'https://raw.githubusercontent.com/$githubRepo/main/version.json';
 
   Future<void> checkUpdate(BuildContext context, {bool showNoUpdateDialog = false}) async {
