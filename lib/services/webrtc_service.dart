@@ -14,26 +14,32 @@ class WebRtcService {
 
   final Map<String, dynamic> _configuration = {
     'iceServers': [
-      // 1. Google Public STUN Servers (100% Free P2P)
+      // 1. Google Public STUN Servers (100% Free P2P Direct)
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
       {'urls': 'stun:stun2.l.google.com:19302'},
       {'urls': 'stun:stun3.l.google.com:19302'},
       {'urls': 'stun:stun4.l.google.com:19302'},
 
-      // 2. OpenRelay Free TURN Servers (Xuyên mọi mạng 4G/5G, NAT kép, Firewall)
+      // 2. Twilio & Cloudflare STUN Servers
+      {'urls': 'stun:global.stun.twilio.com:3478'},
+      {'urls': 'stun:stun.cloudflare.com:3478'},
+
+      // 3. OpenRelay Free TURN Servers (Xuyên qua mọi NAT, Firewall, 4G/5G, Giả lập)
       {
         'urls': [
           'stun:openrelay.metered.ca:80',
           'turn:openrelay.metered.ca:80',
           'turn:openrelay.metered.ca:443',
           'turn:openrelay.metered.ca:443?transport=tcp',
+          'turn:openrelay.metered.ca:443?transport=udp',
         ],
         'username': 'openrelayproject',
         'credential': 'openrelayproject',
       },
     ],
     'sdpSemantics': 'unified-plan',
+    'iceCandidatePoolSize': 10,
   };
 
   MediaStream? get localStream => _localStream;
@@ -41,24 +47,31 @@ class WebRtcService {
 
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
     final mediaConstraints = <String, dynamic>{
-      'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
-        'autoGainControl': true,
-      },
+      'audio': true,
       'video': isVideo
           ? {
               'facingMode': 'user',
-              'optional': [],
+              'width': {'ideal': 640},
+              'height': {'ideal': 480},
+              'frameRate': {'ideal': 25},
             }
           : false,
     };
 
     try {
       _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      
+      // Bật và kích hoạt mic rõ ràng
+      _localStream?.getAudioTracks().forEach((track) {
+        track.enabled = true;
+        try {
+          Helper.setMicrophoneMute(false, track);
+        } catch (_) {}
+      });
+
       localRenderer.srcObject = _localStream;
 
-      // Bật loa ngoài trên điện thoại di động
+      // Kích hoạt loa ngoài để đàm thoại 2 chiều to rõ
       try {
         await Helper.setSpeakerphoneOn(true);
       } catch (_) {}
@@ -67,6 +80,12 @@ class WebRtcService {
       if (isVideo) {
         try {
           _localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': false});
+          _localStream?.getAudioTracks().forEach((track) {
+            track.enabled = true;
+            try {
+              Helper.setMicrophoneMute(false, track);
+            } catch (_) {}
+          });
           localRenderer.srcObject = _localStream;
           try {
             await Helper.setSpeakerphoneOn(true);
@@ -343,6 +362,25 @@ class WebRtcService {
     _localStream?.getVideoTracks().forEach((track) {
       Helper.switchCamera(track);
     });
+  }
+
+  Future<int?> getPingMs() async {
+    try {
+      if (_peerConnection == null) return null;
+      final stats = await _peerConnection!.getStats();
+      for (var report in stats) {
+        if (report.type == 'candidate-pair') {
+          final rtt = report.values['currentRoundTripTime'] ?? report.values['roundTripTime'];
+          if (rtt != null) {
+            final val = double.tryParse(rtt.toString());
+            if (val != null && val > 0) {
+              return (val * 1000).toInt();
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   MediaStream? _screenStream;

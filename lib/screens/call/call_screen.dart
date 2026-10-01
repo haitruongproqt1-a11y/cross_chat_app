@@ -39,12 +39,44 @@ class _CallScreenState extends State<CallScreen> {
   bool _isSpeakerOn = true;
   String _statusText = 'Đang chuẩn bị cuộc gọi...';
   bool _isConnected = false;
+  bool _isCallEnded = false;
+  int _callSeconds = 0;
+  Timer? _callTimer;
+  Timer? _pingTimer;
+  int _pingMs = 35;
   StreamSubscription<DocumentSnapshot>? _callSubscription;
 
   @override
   void initState() {
     super.initState();
     _initCall();
+  }
+
+  void _startTimers() {
+    _callTimer?.cancel();
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        _callSeconds++;
+      });
+    });
+
+    _pingTimer?.cancel();
+    _pingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (!mounted) return;
+      final ping = await _webrtcService.getPingMs();
+      if (mounted && ping != null && ping > 0) {
+        setState(() {
+          _pingMs = ping;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   Future<void> _initCall() async {
@@ -54,6 +86,20 @@ class _CallScreenState extends State<CallScreen> {
 
       _remoteRenderer.onResize = () {
         if (mounted) setState(() {});
+      };
+
+      _webrtcService.onConnectionConnected = () {
+        if (!_isConnected && mounted) {
+          setState(() {
+            _isConnected = true;
+            _statusText = 'Đã kết nối';
+          });
+          _startTimers();
+        }
+      };
+
+      _webrtcService.onConnectionDisconnected = () {
+        _closeCallScreen('Cuộc gọi bị mất kết nối');
       };
 
       final isVideo = widget.callType == CallType.video;
@@ -92,7 +138,7 @@ class _CallScreenState extends State<CallScreen> {
           .snapshots()
           .listen((snapshot) {
         if (!snapshot.exists) {
-          if (mounted) Navigator.pop(context);
+          _closeCallScreen();
           return;
         }
 
@@ -100,19 +146,15 @@ class _CallScreenState extends State<CallScreen> {
         if (data != null) {
           final statusStr = data['status'] as String?;
           if (statusStr == CallStatus.connected.name) {
-            if (mounted) {
+            if (!_isConnected && mounted) {
               setState(() {
                 _isConnected = true;
                 _statusText = 'Đã kết nối';
               });
+              _startTimers();
             }
           } else if (statusStr == CallStatus.ended.name || statusStr == CallStatus.rejected.name) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(statusStr == CallStatus.rejected.name ? 'Cuộc gọi đã bị từ chối' : 'Cuộc gọi đã kết thúc')),
-              );
-              Navigator.pop(context);
-            }
+            _closeCallScreen(statusStr == CallStatus.rejected.name ? 'Cuộc gọi đã bị từ chối' : 'Cuộc gọi đã kết thúc');
           }
         }
       });
@@ -125,17 +167,44 @@ class _CallScreenState extends State<CallScreen> {
     }
   }
 
+  void _closeCallScreen([String? message]) {
+    if (_isCallEnded) return;
+    _isCallEnded = true;
+
+    _callTimer?.cancel();
+    _pingTimer?.cancel();
+    _callSubscription?.cancel();
+
+    _webrtcService.endCall(widget.callId);
+
+    if (mounted) {
+      if (message != null && message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _callTimer?.cancel();
+    _pingTimer?.cancel();
     _callSubscription?.cancel();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
     super.dispose();
   }
 
-  void _endCall() async {
-    await _webrtcService.endCall(widget.callId);
-    if (mounted) Navigator.pop(context);
+  void _endCall() {
+    _closeCallScreen('Bạn đã kết thúc cuộc gọi');
   }
 
   void _toggleScreenShare() async {
@@ -208,21 +277,64 @@ class _CallScreenState extends State<CallScreen> {
                       style: const TextStyle(fontSize: 26, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _isConnected ? Colors.green.withAlpha(50) : Colors.orange.withAlpha(50),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _isConnected ? Colors.green : Colors.orange),
-                      ),
-                      child: Text(
-                        _statusText,
-                        style: TextStyle(
-                          color: _isConnected ? Colors.greenAccent : Colors.orangeAccent,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                    if (_isConnected) ...[
+                      Text(
+                        _formatDuration(_callSeconds),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.5,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                    ],
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isConnected ? Colors.green.withAlpha(50) : Colors.orange.withAlpha(50),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _isConnected ? Colors.green : Colors.orange),
+                          ),
+                          child: Text(
+                            _statusText,
+                            style: TextStyle(
+                              color: _isConnected ? Colors.greenAccent : Colors.orangeAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (_isConnected) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.cyanAccent.withAlpha(40),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.cyanAccent, width: 0.8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.wifi, size: 14, color: Colors.cyanAccent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Ping: ${_pingMs}ms',
+                                  style: const TextStyle(
+                                    color: Colors.cyanAccent,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -255,18 +367,42 @@ class _CallScreenState extends State<CallScreen> {
             Positioned(
               top: 20,
               left: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.remoteUserName,
-                    style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    isVideo ? 'Cuộc gọi Video' : 'Cuộc gọi Thoại',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(140),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.remoteUserName,
+                      style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _isConnected ? _formatDuration(_callSeconds) : (isVideo ? 'Cuộc gọi Video' : 'Cuộc gọi Thoại'),
+                          style: TextStyle(
+                            color: _isConnected ? Colors.greenAccent : Colors.white70,
+                            fontSize: 13,
+                            fontWeight: _isConnected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (_isConnected) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '• Ping: ${_pingMs}ms',
+                            style: const TextStyle(color: Colors.cyanAccent, fontSize: 12),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 

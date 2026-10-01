@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/message_model.dart';
 import '../utils/constants.dart';
 import '../services/location_service.dart';
+import 'full_screen_image_viewer.dart';
+import 'video_player_screen.dart';
 
 class MessageBubble extends StatefulWidget {
   final MessageModel message;
@@ -199,45 +201,106 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     switch (msg.type) {
       case MessageType.image:
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: msg.mediaUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: msg.mediaUrl!,
-                  placeholder: (context, url) => const SizedBox(
-                    height: 180,
-                    child: Center(child: CircularProgressIndicator()),
+        return GestureDetector(
+          onTap: () {
+            if (msg.mediaUrl != null && msg.mediaUrl!.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FullScreenImageViewer(
+                    imageUrl: msg.mediaUrl!,
+                    title: 'Ảnh từ ${msg.senderName}',
                   ),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
-                )
-              : const SizedBox.shrink(),
+                ),
+              );
+            }
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(
+                maxWidth: 240,
+                maxHeight: 240,
+              ),
+              child: msg.mediaUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: msg.mediaUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 200,
+                        height: 180,
+                        color: Colors.black12,
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 200,
+                        height: 150,
+                        color: Colors.black12,
+                        child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
         );
 
       case MessageType.video:
-        return InkWell(
-          onTap: () async {
-            if (msg.mediaUrl != null) {
-              final uri = Uri.parse(msg.mediaUrl!);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
+        return GestureDetector(
+          onTap: () {
+            if (msg.mediaUrl != null && msg.mediaUrl!.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VideoPlayerScreen(
+                    videoUrl: msg.mediaUrl!,
+                    title: 'Video từ ${msg.senderName}',
+                  ),
+                ),
+              );
             }
           },
-          child: Container(
-            height: 180,
-            decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(Icons.play_circle_fill, size: 56, color: Colors.white),
-                Positioned(
-                  bottom: 10,
-                  child: Text('Nhấn để phát video', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                ),
-              ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 220,
+              height: 160,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.black54, Colors.black87],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.play_circle_fill, size: 54, color: Colors.white),
+                  Positioned(
+                    bottom: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(150),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.videocam, size: 14, color: Colors.white70),
+                          SizedBox(width: 4),
+                          Text('Xem Video trong ứng dụng', style: TextStyle(color: Colors.white, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

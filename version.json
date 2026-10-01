@@ -1,9 +1,9 @@
 {
-  "version": "1.0.2",
-  "build_number": 3,
+  "version": "1.0.3",
+  "build_number": 4,
   "release_date": "2026-10-01",
-  "changelog": "- Sửa lỗi tin nhắn: Nội dung tin nhắn hiển thị rõ ràng, chuẩn xác 100%, không còn ký tự lộn xộn\n- Sửa lỗi gửi ảnh: Tải và hiển thị đúng 100% hình ảnh thực tế được gửi (không còn nhảy ảnh ngẫu nhiên)\n- Sửa lỗi gửi video: Xem và phát trực tiếp video gửi trong khung chat\n- Sửa triệt để cuộc gọi thoại & video: Khắc phục hàng đợi ICE candidate, tự động bật loa ngoài, đàm thoại 2 chiều rõ ràng\n- Bổ sung đầy đủ quyền Camera, Microphone, Bluetooth và Media cho Android 13/14/15",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/update_v1.0.2.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/app-release.apk"
+  "changelog": "- Phát Video trực tiếp trong ứng dụng (không còn bị nhảy ra trang web bên ngoài)\n- Xem ảnh toàn màn hình với tính năng phóng to thu nhỏ (InteractiveViewer), thu gọn khung ảnh vừa vặn tinh tế\n- Bổ sung đếm thời gian đàm thoại khi bắt máy (00:00) và hiển thị thông số Ping (ms) mạng thời gian thực\n- Tối ưu WebRTC P2P + Đa máy chủ STUN Free và TURN Relay Free (vượt qua mọi tường lửa, mạng 4G/5G, giả lập)\n- Khắc phục triệt để lỗi màn hình đen xì và lỗi tự động thoát màn hình chat khi kết thúc cuộc gọi",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.3/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.3/update_v1.0.3.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.3/app-release.apk"
 }
