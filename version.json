@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "build_number": 1,
+  "release_date": "2026-10-01",
+  "changelog": "- Ra mắt phiên bản KINI CHAT v1.0.0\n- Hỗ trợ gọi thoại & gọi Video WebRTC (P2P + OpenRelay TURN)\n- Chia sẻ màn hình trong cuộc gọi video\n- Tìm kiếm bạn bè quanh đây theo GPS, giới tính, quê quán\n- Mã hóa tin nhắn bảo mật E2EE",
+  "ota_package_url": "https://github.com/haitruongproqt1/cross_chat_app/releases/download/v1.0.0/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1/cross_chat_app/releases/download/v1.0.0/update_v1.0.0.zip",
+  "apk_url": "https://github.com/haitruongproqt1/cross_chat_app/releases/download/v1.0.0/app-release.apk"
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "277234184290",
+    "project_id": "kini-chat",
+    "storage_bucket": "kini-chat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277234184290:android:55e53c491764e690afa13b",
+        "android_client_info": {
+          "package_name": "com.example.cross_chat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTLF9OQw_-TlHvS3TMu3jw03B8QUlHSbo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
