@@ -16,6 +16,7 @@ import '../call/call_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
+  static String? activeRoomId;
 
   const ChatDetailScreen({super.key, required this.room});
 
@@ -32,7 +33,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   bool _isUploading = false;
 
   @override
+  void initState() {
+    super.initState();
+    ChatDetailScreen.activeRoomId = widget.room.id;
+  }
+
+  @override
   void dispose() {
+    if (ChatDetailScreen.activeRoomId == widget.room.id) {
+      ChatDetailScreen.activeRoomId = null;
+    }
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();

@@ -25,7 +25,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   StreamSubscription<QuerySnapshot>? _incomingCallSub;
+  StreamSubscription<QuerySnapshot>? _incomingMessageSub;
   String? _activeIncomingCallId;
+  final int _initTimestamp = DateTime.now().millisecondsSinceEpoch;
 
   final List<Widget> _views = const [
     ChatListView(),
@@ -39,13 +41,63 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
+      _listenForIncomingMessages();
     });
   }
 
   @override
   void dispose() {
     _incomingCallSub?.cancel();
+    _incomingMessageSub?.cancel();
     super.dispose();
+  }
+
+  void _listenForIncomingMessages() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.currentUser;
+    if (user == null) return;
+
+    _incomingMessageSub = FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('memberIds', arrayContains: user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.modified || change.type == DocumentChangeType.added) {
+          final data = change.doc.data();
+          if (data == null) continue;
+
+          final senderId = data['lastMessageSenderId'] as String?;
+          if (senderId == null || senderId == user.uid) continue;
+
+          int? msgTimeMs;
+          final rawTime = data['lastMessageTime'];
+          if (rawTime is int) {
+            msgTimeMs = rawTime;
+          } else if (rawTime is Timestamp) {
+            msgTimeMs = rawTime.millisecondsSinceEpoch;
+          }
+
+          if (msgTimeMs == null || msgTimeMs < _initTimestamp) continue;
+
+          final roomId = change.doc.id;
+          if (ChatDetailScreen.activeRoomId == roomId) continue;
+
+          final senderName = (data['lastMessageSenderName'] as String?)?.isNotEmpty == true
+              ? data['lastMessageSenderName'] as String
+              : (data['name'] as String? ?? 'Tin nhắn mới');
+          final messageText = data['lastMessage'] as String? ?? 'Bạn có tin nhắn mới';
+
+          CallSoundService().playMessageChime();
+          NotificationService().showLocalNotification(
+            id: roomId.hashCode,
+            title: senderName,
+            body: messageText,
+            payload: roomId,
+          );
+        }
+      }
+    });
   }
 
   void _listenForIncomingCalls() {

@@ -46,6 +46,35 @@ class WebRtcService {
   MediaStream? get localStream => _localStream;
   MediaStream? get remoteStream => _remoteStream;
 
+  String _optimizeSdp(String sdp) {
+    final lines = sdp.split('\r\n');
+    final modifiedLines = <String>[];
+    String? opusPayloadType;
+
+    for (var line in lines) {
+      if (line.startsWith('a=rtpmap:') && line.toLowerCase().contains('opus/48000')) {
+        final match = RegExp(r'a=rtpmap:(\d+)\s+opus/48000', caseSensitive: false).firstMatch(line);
+        if (match != null) {
+          opusPayloadType = match.group(1);
+        }
+      }
+    }
+
+    for (var line in lines) {
+      var currentLine = line;
+      if (opusPayloadType != null && currentLine.startsWith('a=fmtp:$opusPayloadType')) {
+        if (!currentLine.contains('minptime=')) {
+          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;useinbandfec=1';
+        }
+      }
+      modifiedLines.add(currentLine);
+      if (currentLine.startsWith('m=video')) {
+        modifiedLines.add('b=AS:2000'); // 2 Mbps max video bitrate to eliminate bufferbloat and lag
+      }
+    }
+    return modifiedLines.join('\r\n');
+  }
+
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
     final audioConstraints = <String, dynamic>{
       'echoCancellation': true,
@@ -65,9 +94,9 @@ class WebRtcService {
       'video': isVideo
           ? {
               'facingMode': 'user',
-              'width': {'ideal': 640},
-              'height': {'ideal': 480},
-              'frameRate': {'ideal': 25},
+              'width': {'ideal': 640, 'max': 1280},
+              'height': {'ideal': 480, 'max': 720},
+              'frameRate': {'ideal': 30, 'max': 30},
             }
           : false,
     };
@@ -175,9 +204,11 @@ class WebRtcService {
       _peerConnection?.addTrack(track, _localStream!);
     });
 
-    // Create SDP Offer
+    // Create SDP Offer with Ultra-Low Latency & Anti-Lag optimizations
     final offer = await _peerConnection!.createOffer();
-    await _peerConnection!.setLocalDescription(offer);
+    final optimizedSdp = _optimizeSdp(offer.sdp ?? '');
+    final optimizedOffer = RTCSessionDescription(optimizedSdp, offer.type);
+    await _peerConnection!.setLocalDescription(optimizedOffer);
 
     final callSession = CallSessionModel(
       roomId: roomId,
@@ -189,7 +220,7 @@ class WebRtcService {
       type: type,
       status: CallStatus.ringing,
       createdAt: DateTime.now(),
-      sdpOffer: offer.toMap(),
+      sdpOffer: optimizedOffer.toMap(),
     );
 
     await callDoc.set(callSession.toMap());
@@ -320,12 +351,14 @@ class WebRtcService {
       );
     }
 
-    // 2. Tạo và Set SDP Answer
+    // 2. Tạo và Set SDP Answer với tối ưu độ trễ thấp
     final answer = await _peerConnection!.createAnswer();
-    await _peerConnection!.setLocalDescription(answer);
+    final optimizedSdp = _optimizeSdp(answer.sdp ?? '');
+    final optimizedAnswer = RTCSessionDescription(optimizedSdp, answer.type);
+    await _peerConnection!.setLocalDescription(optimizedAnswer);
 
     await callDoc.update({
-      'sdpAnswer': answer.toMap(),
+      'sdpAnswer': optimizedAnswer.toMap(),
       'status': CallStatus.connected.name,
     });
 
@@ -419,7 +452,18 @@ class WebRtcService {
       }
 
       final mediaConstraints = <String, dynamic>{
-        'video': true,
+        'video': {
+          'mandatory': {
+            'minWidth': 720,
+            'minHeight': 1280,
+            'maxWidth': 1080,
+            'maxHeight': 1920,
+            'maxFrameRate': 30,
+          },
+          'optional': [
+            {'googCpuOveruseDetection': true},
+          ],
+        },
         'audio': shareDeviceAudio,
       };
 

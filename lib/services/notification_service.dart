@@ -46,20 +46,34 @@ class NotificationService {
       },
     );
 
-    // 3. Foreground message listener
+    // 3. Create high-importance Android Notification Channel
+    const androidChannel = AndroidNotificationChannel(
+      'chat_messages',
+      'Tin nhắn & Cuộc gọi KINI',
+      description: 'Thông báo tin nhắn và cuộc gọi đến KINI CHAT',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
+    // 4. Foreground message listener
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
       if (notification != null) {
         showLocalNotification(
           id: message.hashCode,
-          title: notification.title ?? 'New Message',
+          title: notification.title ?? 'Tin nhắn mới',
           body: notification.body ?? '',
           payload: message.data['roomId'],
         );
       }
     });
 
-    // 4. Background message listener
+    // 5. Background message listener
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
@@ -78,20 +92,24 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'chat_messages',
-      'Chat Messages',
-      channelDescription: 'Notifications for new chat messages',
+      'Tin nhắn & Cuộc gọi KINI',
+      channelDescription: 'Thông báo tin nhắn và cuộc gọi đến KINI CHAT',
       importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 250, 150, 250]),
       showWhen: true,
+      icon: '@mipmap/ic_launcher',
     );
     const darwinDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
-    const platformDetails = NotificationDetails(
+    final platformDetails = NotificationDetails(
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
@@ -100,3 +118,4 @@ class NotificationService {
     await _localNotifications.show(id, title, body, platformDetails, payload: payload);
   }
 }
+

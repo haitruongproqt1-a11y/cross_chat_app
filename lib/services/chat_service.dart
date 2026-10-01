@@ -21,12 +21,35 @@ class ChatService {
         .snapshots()
         .map((snapshot) {
       final list = snapshot.docs.map((doc) => ChatRoomModel.fromMap(doc.data(), doc.id)).toList();
-      list.sort((a, b) {
+      
+      // Khử trùng lặp phòng chat 1-1 (Deduplicate direct rooms)
+      final Map<String, ChatRoomModel> uniqueRooms = {};
+      for (var room in list) {
+        if (room.type == ChatRoomType.direct) {
+          final otherUser = room.memberIds.firstWhere((id) => id != currentUserId, orElse: () => '');
+          final key = 'direct_$otherUser';
+          if (!uniqueRooms.containsKey(key)) {
+            uniqueRooms[key] = room;
+          } else {
+            final existing = uniqueRooms[key]!;
+            final timeExisting = existing.lastMessageTime ?? existing.createdAt;
+            final timeCurrent = room.lastMessageTime ?? room.createdAt;
+            if (timeCurrent.isAfter(timeExisting)) {
+              uniqueRooms[key] = room;
+            }
+          }
+        } else {
+          uniqueRooms[room.id] = room;
+        }
+      }
+
+      final result = uniqueRooms.values.toList();
+      result.sort((a, b) {
         final timeA = a.lastMessageTime ?? a.createdAt;
         final timeB = b.lastMessageTime ?? b.createdAt;
         return timeB.compareTo(timeA);
       });
-      return list;
+      return result;
     });
   }
 
@@ -247,6 +270,7 @@ class ChatService {
       'lastMessage': previewText,
       'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
       'lastMessageSenderId': sender.uid,
+      'lastMessageSenderName': sender.displayName,
     });
   }
 
@@ -383,12 +407,7 @@ class ChatService {
       );
 
       await msgRef.set(message.toMap());
-
-      await _firestore.collection('chat_rooms').doc(roomId).update({
-        'lastMessage': isVideo ? '🎥 $content' : '📞 $content',
-        'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
-        'lastMessageSenderId': callerId,
-      });
+      // Lưu vào lịch sử cuộc trò chuyện giữa 2 người, không ghi đè lastMessage ngoài mục trò chuyện
     } catch (e) {
       // Bỏ qua lỗi nếu không thể ghi nhật ký
     }

@@ -1,9 +1,9 @@
 {
-  "version": "1.0.5",
-  "build_number": 6,
+  "version": "1.0.6",
+  "build_number": 7,
   "release_date": "2026-10-02",
-  "changelog": "- Khắc phục triệt để chia sẻ màn hình trên Android 14/15: Tự động khởi chạy Foreground Service MediaProjection, không bị đứng hình khi chuyển sang app khác\n- Thông báo chia sẻ màn hình dính trên thanh trạng thái: Chạm 1 chạm là lập tức quay lại cuộc gọi ngay từ bất kỳ đâu\n- Tích hợp Nhạc chuông cuộc gọi đến và Nhạc chờ ('tút... tút...') chuẩn viễn thông riêng cho ứng dụng\n- Tự động lưu lịch sử cuộc gọi thoại và video (kèm thời lượng đàm thoại và cuộc gọi nhỡ) trực tiếp vào đoạn chat 2 người\n- Giao diện Chỉnh sửa Hồ sơ cá nhân: Bổ sung Giới tính (Nam/Nữ/Khác), Năm sinh (tự tính tuổi), Quê quán hỗ trợ nhập tự do và chọn nhanh\n- Nâng cấp danh bạ 63 tỉnh thành Việt Nam (chuẩn hóa Huế) và tìm kiếm bạn bè thông minh",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/update_v1.0.5.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/app-arm64-v8a-release.apk"
+  "changelog": "- Tối ưu truyền phát thời gian thực siêu tốc độ (Ultra-Low Latency): Chia sẻ màn hình và gọi video mượt mà, thao tác tới đâu bên kia thấy tức thì, không bị trễ hay giật lag\n- Kiểm soát băng thông chống nghẽn mạng (SDP & Opus Tuning): Đàm thoại thoại/video sắc nét, không bị dồn hàng đợi (bufferbloat)\n- Lịch sử cuộc gọi tinh gọn: Chỉ lưu vào chi tiết phòng chat 2 người, không làm đè hay nhảy nhiều dòng trong danh sách trò chuyện ngoài\n- Thiết kế Logo ứng dụng KINI CHAT hoàn toàn mới: Biểu tượng K cách điệu bong bóng chat hiện đại, nổi bật ngoài màn hình chính\n- Thông báo nổi và chuông tin nhắn mới: Luôn nhận được thông báo tin nhắn và cuộc gọi đến to rõ khi đang ở ngoài phòng chat hoặc app chạy nền",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.6/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.6/update_v1.0.6.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.6/app-arm64-v8a-release.apk"
 }
