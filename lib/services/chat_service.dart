@@ -321,7 +321,26 @@ class ChatService {
     await _firestore.collection('chat_rooms').doc(roomId).delete();
   }
 
-  // Get all registered users (Contacts)
+  // Lấy danh sách BẠN BÈ thực tế (Chỉ người đã kết bạn)
+  Stream<List<UserModel>> getFriendsStream(String currentUserId) {
+    return _firestore.collection('users').doc(currentUserId).snapshots().asyncMap((userDoc) async {
+      if (!userDoc.exists || userDoc.data() == null) return <UserModel>[];
+      final friendIds = List<String>.from(userDoc.data()!['friends'] ?? []);
+      if (friendIds.isEmpty) return <UserModel>[];
+
+      final List<UserModel> friends = [];
+      for (var i = 0; i < friendIds.length; i += 30) {
+        final chunk = friendIds.sublist(i, (i + 30 > friendIds.length) ? friendIds.length : i + 30);
+        final snapshot = await _firestore.collection('users').where(FieldPath.documentId, whereIn: chunk).get();
+        for (var doc in snapshot.docs) {
+          friends.add(UserModel.fromMap(doc.data(), doc.id));
+        }
+      }
+      return friends;
+    });
+  }
+
+  // Get all registered users (dùng cho tìm kiếm hoặc gợi ý)
   Stream<List<UserModel>> getAllUsers(String currentUserId) {
     return _firestore.collection('users').snapshots().map((snapshot) {
       return snapshot.docs

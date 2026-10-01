@@ -159,7 +159,7 @@ class _ContactsViewState extends State<ContactsView> {
           ),
           Expanded(
             child: StreamBuilder<List<UserModel>>(
-              stream: _chatService.getAllUsers(currentUser.uid),
+              stream: _chatService.getFriendsStream(currentUser.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -170,7 +170,21 @@ class _ContactsViewState extends State<ContactsView> {
 
                 if (filtered.isEmpty) {
                   return const Center(
-                    child: Text('Chưa có liên hệ nào trong danh bạ.', style: TextStyle(color: Colors.grey)),
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.people_outline, size: 56, color: Colors.grey),
+                          SizedBox(height: 12),
+                          Text(
+                            'Chưa có bạn bè trong danh bạ.\nNhấn nút "Tìm Kiếm & Kết Bạn" ở trên để tìm và kết bạn mới!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
 

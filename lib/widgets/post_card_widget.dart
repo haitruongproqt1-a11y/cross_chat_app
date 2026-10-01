@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../models/post_model.dart';
 import '../../models/post_comment_model.dart';
 import '../../models/user_model.dart';
 import '../../services/wall_service.dart';
 import '../../utils/constants.dart';
 import 'avatar_widget.dart';
+import 'video_player_screen.dart';
 
 class PostCardWidget extends StatelessWidget {
   final PostModel post;
@@ -143,7 +143,15 @@ class PostCardWidget extends StatelessWidget {
 
   void _showMediaViewer(BuildContext context, String url, bool isVideo) {
     if (isVideo) {
-      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoPlayerScreen(
+            videoUrl: url,
+            title: 'Video của ${post.authorName}',
+          ),
+        ),
+      );
       return;
     }
 

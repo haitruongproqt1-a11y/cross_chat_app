@@ -1,9 +1,9 @@
 {
-  "version": "1.0.7",
-  "build_number": 8,
+  "version": "1.0.8",
+  "build_number": 9,
   "release_date": "2026-10-02",
-  "changelog": "- Triệt tiêu rè, vang, rít khi bắt đầu cuộc gọi: Tinh chỉnh bộ lọc âm thanh phần cứng (AEC, NS, AGC), tích hợp Opus DTX ngắt nhiễu nền khi im lặng, cuộc gọi thoại mặc định dùng loa trong (earpiece) như điện thoại thông thường\n- Nâng cấp chia sẻ màn hình kèm âm thanh thiết bị (YouTube/Nhạc/Game): Tự động phát âm thanh hệ thống song song với micro để 2 bên vừa chia sẻ vừa nói chuyện rõ ràng\n- Thông báo thông minh: CHỈ hiển thị thông báo tin nhắn và cuộc gọi đến khi người dùng KHÔNG ở trong ứng dụng (khi app chạy nền hoặc ẩn), không làm phiền khi đang dùng app\n- Đồng bộ và hiển thị đầy đủ thông tin hồ sơ tức thì: Cập nhật xong hiển thị ngay Avatar, Tên, Năm sinh (kèm số tuổi), Giới tính, Quê quán\n- Ra mắt TƯỜNG NHÀ & BẢNG TIN NHẬT KÝ: Đăng tải ảnh, video, trạng thái; hỗ trợ quyền riêng tư (Công khai, Bạn bè, hoặc Chọn chặn người xem cụ thể); Thích và bình luận tương tác",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.7/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.7/update_v1.0.7.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.7/app-arm64-v8a-release.apk"
+  "changelog": "- Xem video Tường Nhà trực tiếp ngay trong ứng dụng: Trình phát video toàn màn hình cao cấp, tua nhanh/chậm mượt mà, không bao giờ bị chuyển hướng ra trình duyệt web\n- Danh bạ chỉ hiển thị bạn bè thực tế: Danh bạ cá nhân chỉ chứa những người đã kết bạn thành công, người dùng mới đăng ký sẽ không bị tự động hiển thị trong danh bạ",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.8/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.8/update_v1.0.8.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.8/app-arm64-v8a-release.apk"
 }
