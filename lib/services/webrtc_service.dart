@@ -14,12 +14,14 @@ class WebRtcService {
 
   final Map<String, dynamic> _configuration = {
     'iceServers': [
-      // 1. Google STUN Servers (100% Free P2P)
+      // 1. Google Public STUN Servers (100% Free P2P)
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
       {'urls': 'stun:stun2.l.google.com:19302'},
+      {'urls': 'stun:stun3.l.google.com:19302'},
+      {'urls': 'stun:stun4.l.google.com:19302'},
 
-      // 2. OpenRelay Free TURN Servers (Xuyên NAT / Firewall 100% Free)
+      // 2. OpenRelay Free TURN Servers (Xuyên mọi mạng 4G/5G, NAT kép, Firewall)
       {
         'urls': [
           'stun:openrelay.metered.ca:80',
@@ -39,10 +41,15 @@ class WebRtcService {
 
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
     final mediaConstraints = <String, dynamic>{
-      'audio': true,
+      'audio': {
+        'echoCancellation': true,
+        'noiseSuppression': true,
+        'autoGainControl': true,
+      },
       'video': isVideo
           ? {
               'facingMode': 'user',
+              'optional': [],
             }
           : false,
     };
@@ -50,13 +57,20 @@ class WebRtcService {
     try {
       _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       localRenderer.srcObject = _localStream;
+
+      // Bật loa ngoài trên điện thoại di động
+      try {
+        await Helper.setSpeakerphoneOn(true);
+      } catch (_) {}
     } catch (e) {
       debugPrint('Lỗi mở Camera/Mic: $e');
-      // Thử lại chỉ với audio nếu video không mở được
       if (isVideo) {
         try {
           _localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': false});
           localRenderer.srcObject = _localStream;
+          try {
+            await Helper.setSpeakerphoneOn(true);
+          } catch (_) {}
         } catch (_) {}
       }
     }
@@ -80,7 +94,11 @@ class WebRtcService {
 
     _peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
       if (candidate.candidate != null) {
-        callDoc.collection('callerCandidates').add(candidate.toMap());
+        callDoc.collection('callerCandidates').add({
+          'candidate': candidate.candidate,
+          'sdpMid': candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        });
       }
     };
 
@@ -88,6 +106,9 @@ class WebRtcService {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
+      try {
+        Helper.setSpeakerphoneOn(true);
+      } catch (_) {}
     };
 
     _peerConnection?.onTrack = (RTCTrackEvent event) {
@@ -95,14 +116,20 @@ class WebRtcService {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
+        try {
+          Helper.setSpeakerphoneOn(true);
+        } catch (_) {}
       }
     };
 
     _peerConnection?.onIceConnectionState = (RTCIceConnectionState state) {
-      debugPrint('WebRTC ICE State: $state');
+      debugPrint('WebRTC ICE State (Caller): $state');
       if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
+        try {
+          Helper.setSpeakerphoneOn(true);
+        } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         onConnectionDisconnected?.call();
@@ -132,28 +159,58 @@ class WebRtcService {
 
     await callDoc.set(callSession.toMap());
 
-    // Listen for Answer
+    // Hàng đợi lưu trữ Candidate để tránh Race condition trước khi setRemoteDescription
+    bool isRemoteDescSet = false;
+    final List<RTCIceCandidate> candidateQueue = [];
+
+    // Lắng nghe Answer từ máy nhận
     callDoc.snapshots().listen((snapshot) async {
       if (!snapshot.exists) return;
       final data = snapshot.data();
-      if (data != null && data['sdpAnswer'] != null && _peerConnection?.getRemoteDescription() == null) {
+      if (data != null && data['sdpAnswer'] != null && !isRemoteDescSet) {
         final answer = RTCSessionDescription(
           data['sdpAnswer']['sdp'],
           data['sdpAnswer']['type'],
         );
         await _peerConnection?.setRemoteDescription(answer);
+        isRemoteDescSet = true;
+
+        // Xả toàn bộ hàng đợi candidate
+        for (var c in candidateQueue) {
+          try {
+            await _peerConnection?.addCandidate(c);
+          } catch (e) {
+            debugPrint('Error draining candidate: $e');
+          }
+        }
+        candidateQueue.clear();
+
+        try {
+          await Helper.setSpeakerphoneOn(true);
+        } catch (_) {}
       }
     });
 
-    // Listen for remote ICE candidates
+    // Lắng nghe ICE candidates từ máy nhận
     callDoc.collection('receiverCandidates').snapshots().listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
-          if (data != null) {
-            _peerConnection?.addCandidate(
-              RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMLineIndex']),
+          if (data != null && data['candidate'] != null) {
+            final mLine = data['sdpMLineIndex'] ?? data['sdpMlineIndex'] ?? 0;
+            final candidate = RTCIceCandidate(
+              data['candidate'],
+              data['sdpMid'],
+              mLine is int ? mLine : int.tryParse(mLine.toString()) ?? 0,
             );
+
+            if (isRemoteDescSet && _peerConnection != null) {
+              try {
+                _peerConnection?.addCandidate(candidate);
+              } catch (_) {}
+            } else {
+              candidateQueue.add(candidate);
+            }
           }
         }
       }
@@ -174,7 +231,11 @@ class WebRtcService {
 
     _peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
       if (candidate.candidate != null) {
-        callDoc.collection('receiverCandidates').add(candidate.toMap());
+        callDoc.collection('receiverCandidates').add({
+          'candidate': candidate.candidate,
+          'sdpMid': candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        });
       }
     };
 
@@ -182,6 +243,9 @@ class WebRtcService {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
+      try {
+        Helper.setSpeakerphoneOn(true);
+      } catch (_) {}
     };
 
     _peerConnection?.onTrack = (RTCTrackEvent event) {
@@ -189,6 +253,9 @@ class WebRtcService {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
+        try {
+          Helper.setSpeakerphoneOn(true);
+        } catch (_) {}
       }
     };
 
@@ -197,6 +264,9 @@ class WebRtcService {
       if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
+        try {
+          Helper.setSpeakerphoneOn(true);
+        } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         onConnectionDisconnected?.call();
@@ -207,7 +277,7 @@ class WebRtcService {
       _peerConnection?.addTrack(track, _localStream!);
     });
 
-    // Set remote offer
+    // 1. Set Remote Offer trước
     final offerData = callData['sdpOffer'];
     if (offerData != null) {
       await _peerConnection?.setRemoteDescription(
@@ -215,7 +285,7 @@ class WebRtcService {
       );
     }
 
-    // Create SDP Answer
+    // 2. Tạo và Set SDP Answer
     final answer = await _peerConnection!.createAnswer();
     await _peerConnection!.setLocalDescription(answer);
 
@@ -224,15 +294,27 @@ class WebRtcService {
       'status': CallStatus.connected.name,
     });
 
-    // Listen for caller candidates
+    try {
+      await Helper.setSpeakerphoneOn(true);
+    } catch (_) {}
+
+    // 3. Lắng nghe caller candidates
     callDoc.collection('callerCandidates').snapshots().listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
-          if (data != null) {
-            _peerConnection?.addCandidate(
-              RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMLineIndex']),
+          if (data != null && data['candidate'] != null) {
+            final mLine = data['sdpMLineIndex'] ?? data['sdpMlineIndex'] ?? 0;
+            final candidate = RTCIceCandidate(
+              data['candidate'],
+              data['sdpMid'],
+              mLine is int ? mLine : int.tryParse(mLine.toString()) ?? 0,
             );
+            try {
+              _peerConnection?.addCandidate(candidate);
+            } catch (e) {
+              debugPrint('Lỗi add candidate: $e');
+            }
           }
         }
       }
@@ -249,6 +331,12 @@ class WebRtcService {
     _localStream?.getVideoTracks().forEach((track) {
       track.enabled = !isVideoOff;
     });
+  }
+
+  void toggleSpeaker(bool isSpeakerOn) {
+    try {
+      Helper.setSpeakerphoneOn(isSpeakerOn);
+    } catch (_) {}
   }
 
   void switchCamera() {

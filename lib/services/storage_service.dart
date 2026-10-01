@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 
 class StorageService {
   static final StorageService _instance = StorageService._internal();
@@ -11,18 +10,6 @@ class StorageService {
   StorageService._internal();
 
   final ImagePicker _picker = ImagePicker();
-  final Uuid _uuid = const Uuid();
-
-  // Cloudinary Settings (Free tier, no credit card required)
-  // You can set your own Cloud Name and Upload Preset below, or use the default demo preset
-  static String cloudName = 'demo'; 
-  static String uploadPreset = 'docs_upload_example_preset';
-
-  /// Update Cloudinary credentials dynamically
-  static void configureCloudinary({required String newCloudName, required String newPreset}) {
-    cloudName = newCloudName;
-    uploadPreset = newPreset;
-  }
 
   // Pick Image from Gallery or Camera
   Future<XFile?> pickImage({ImageSource source = ImageSource.gallery}) async {
@@ -39,10 +26,13 @@ class StorageService {
     }
   }
 
-  // Pick Video
+  // Pick Video from Gallery
   Future<XFile?> pickVideo() async {
     try {
-      return await _picker.pickVideo(source: ImageSource.gallery);
+      return await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 10),
+      );
     } catch (e) {
       debugPrint('Error picking video: $e');
       return null;
@@ -65,19 +55,55 @@ class StorageService {
     return null;
   }
 
-  /// Upload file / media to Cloudinary (100% Free, No Credit Card needed)
+  /// Tải tệp lên máy chủ lưu trữ vĩnh viễn, miễn phí 100% (Hình ảnh, Video, Âm thanh, Tài liệu)
   Future<String?> uploadFile({
     required String path,
     required String fileName,
     required String folder,
     Uint8List? fileBytes,
   }) async {
+    // 1. Phương thức chính: Catbox API (Lưu trữ ảnh & video gốc vĩnh viễn, không giới hạn, không cần tài khoản)
     try {
-      final url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/auto/upload');
+      final url = Uri.parse('https://catbox.moe/user/api.php');
       final request = http.MultipartRequest('POST', url);
+      request.fields['reqtype'] = 'fileupload';
 
-      request.fields['upload_preset'] = uploadPreset;
-      request.fields['folder'] = folder;
+      if (kIsWeb || fileBytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'fileToUpload',
+            fileBytes!,
+            filename: fileName,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'fileToUpload',
+            path,
+            filename: fileName,
+          ),
+        );
+      }
+
+      final streamed = await request.send().timeout(const Duration(seconds: 45));
+      final response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode == 200) {
+        final resultUrl = response.body.trim();
+        if (resultUrl.startsWith('http://') || resultUrl.startsWith('https://')) {
+          debugPrint('Upload tệp thành công lên Catbox: $resultUrl');
+          return resultUrl;
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi tải tệp lên Catbox: $e');
+    }
+
+    // 2. Dự phòng: TmpFiles API (Hỗ trợ tải trực tiếp mọi loại file)
+    try {
+      final url = Uri.parse('https://tmpfiles.org/api/v1/upload');
+      final request = http.MultipartRequest('POST', url);
 
       if (kIsWeb || fileBytes != null) {
         request.files.add(
@@ -97,22 +123,22 @@ class StorageService {
         );
       }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamed);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final secureUrl = data['secure_url'] as String?;
-        debugPrint('Uploaded to Cloudinary successfully: $secureUrl');
-        return secureUrl;
-      } else {
-        debugPrint('Cloudinary upload responded with code ${response.statusCode}: ${response.body}');
-        // Fallback for offline demo
-        return 'https://picsum.photos/seed/${_uuid.v4()}/800/600';
+        final rawUrl = data['data']?['url'] as String?;
+        if (rawUrl != null && rawUrl.isNotEmpty) {
+          final directUrl = rawUrl.replaceFirst('tmpfiles.org/', 'tmpfiles.org/dl/');
+          debugPrint('Upload tệp thành công lên TmpFiles: $directUrl');
+          return directUrl;
+        }
       }
     } catch (e) {
-      debugPrint('Cloudinary upload exception: $e');
-      return 'https://picsum.photos/seed/${_uuid.v4()}/800/600';
+      debugPrint('Lỗi tải tệp lên TmpFiles: $e');
     }
+
+    return null;
   }
 }

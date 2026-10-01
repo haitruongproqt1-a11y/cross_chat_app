@@ -1,9 +1,9 @@
 {
-  "version": "1.0.1",
-  "build_number": 2,
+  "version": "1.0.2",
+  "build_number": 3,
   "release_date": "2026-10-01",
-  "changelog": "- Sửa triệt để kết nối cuộc gọi video và thông báo khi người gọi kết thúc\n- Hỗ trợ gửi ảnh, video, tệp tài liệu và vị trí\n- Tính năng sao chép tin nhắn, thu hồi tin nhắn và xóa tin nhắn\n- Hiển thị liên kết web chuẩn có thể nhấp trực tiếp\n- Tính năng tìm kiếm bạn bè qua Gmail, Tên, ID cá nhân & Chia sẻ mã QR",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.1/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.1/update_v1.0.1.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.1/app-release.apk"
+  "changelog": "- Sửa lỗi tin nhắn: Nội dung tin nhắn hiển thị rõ ràng, chuẩn xác 100%, không còn ký tự lộn xộn\n- Sửa lỗi gửi ảnh: Tải và hiển thị đúng 100% hình ảnh thực tế được gửi (không còn nhảy ảnh ngẫu nhiên)\n- Sửa lỗi gửi video: Xem và phát trực tiếp video gửi trong khung chat\n- Sửa triệt để cuộc gọi thoại & video: Khắc phục hàng đợi ICE candidate, tự động bật loa ngoài, đàm thoại 2 chiều rõ ràng\n- Bổ sung đầy đủ quyền Camera, Microphone, Bluetooth và Media cho Android 13/14/15",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/update_v1.0.2.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.2/app-release.apk"
 }

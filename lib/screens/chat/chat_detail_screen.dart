@@ -158,10 +158,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (currentUser == null) return;
 
-    final receiverId = widget.room.memberIds.firstWhere(
+    String receiverId = widget.room.memberIds.firstWhere(
       (id) => id != currentUser.uid,
       orElse: () => '',
     );
+
+    if (receiverId.isEmpty && widget.room.memberNames.isNotEmpty) {
+      receiverId = widget.room.memberNames.keys.firstWhere(
+        (id) => id != currentUser.uid,
+        orElse: () => '',
+      );
+    }
+
+    if (receiverId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy người nhận để thực hiện cuộc gọi.')),
+      );
+      return;
+    }
 
     Navigator.push(
       context,

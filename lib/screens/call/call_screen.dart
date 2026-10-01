@@ -36,6 +36,7 @@ class _CallScreenState extends State<CallScreen> {
 
   bool _isMuted = false;
   bool _isVideoOff = false;
+  bool _isSpeakerOn = true;
   String _statusText = 'Đang chuẩn bị cuộc gọi...';
   bool _isConnected = false;
   StreamSubscription<DocumentSnapshot>? _callSubscription;
@@ -330,17 +331,21 @@ class _CallScreenState extends State<CallScreen> {
                           _webrtcService.toggleVideo(_isVideoOff);
                         },
                       ),
-                    )
-                  else
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white24,
-                      child: IconButton(
-                        icon: const Icon(Icons.volume_up, color: Colors.white),
-                        tooltip: 'Loa ngoài',
-                        onPressed: () {},
-                      ),
                     ),
+                  // Nút Loa ngoài (Speakerphone)
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: _isSpeakerOn ? Colors.white : Colors.white24,
+                    child: IconButton(
+                      icon: Icon(_isSpeakerOn ? Icons.volume_up : Icons.volume_off),
+                      tooltip: _isSpeakerOn ? 'Tắt loa ngoài' : 'Bật loa ngoài',
+                      color: _isSpeakerOn ? Colors.black : Colors.white,
+                      onPressed: () {
+                        setState(() => _isSpeakerOn = !_isSpeakerOn);
+                        _webrtcService.toggleSpeaker(_isSpeakerOn);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

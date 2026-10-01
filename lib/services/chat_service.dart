@@ -39,9 +39,13 @@ class ChatService {
             final msg = MessageModel.fromMap(doc.data(), doc.id);
             if (msg.isDeleted) return null;
 
-            final decryptedContent = msg.type == MessageType.text
-                ? _security.decryptForRoom(msg.content, roomId)
-                : msg.content;
+            String decryptedContent = msg.content;
+            if (msg.type == MessageType.text && msg.content.startsWith('ENC:')) {
+              decryptedContent = _security.decryptForRoom(msg.content, roomId);
+              if (decryptedContent.startsWith('ENC:')) {
+                decryptedContent = decryptedContent.replaceFirst('ENC:', '');
+              }
+            }
 
             return MessageModel(
               id: msg.id,
@@ -151,9 +155,7 @@ class ChatService {
   }) async {
     final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
 
-    final secureContent = type == MessageType.text
-        ? _security.encryptForRoom(content, roomId)
-        : content;
+    final secureContent = content;
 
     final message = MessageModel(
       id: msgRef.id,
