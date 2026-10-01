@@ -7,6 +7,8 @@ import '../settings/profile_edit_screen.dart';
 import '../settings/privacy_security_screen.dart';
 import '../../services/ota_update_service.dart';
 
+import '../wall/user_wall_screen.dart';
+
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
@@ -32,43 +34,104 @@ class SettingsView extends StatelessWidget {
                   BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  AvatarWidget(
-                    name: user.displayName,
-                    photoUrl: user.photoUrl,
-                    radius: 30,
+                  Row(
+                    children: [
+                      AvatarWidget(
+                        name: user.displayName,
+                        photoUrl: user.photoUrl,
+                        radius: 34,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.displayName,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              user.statusMessage,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.grey, fontSize: 13),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user.email,
+                              style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+                        tooltip: 'Chỉnh sửa hồ sơ',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.displayName,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+                  // Hiển thị đầy đủ Giới tính, Năm sinh, Tuổi, Quê quán
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      if (user.gender.isNotEmpty && user.gender != 'Chưa xác định')
+                        Chip(
+                          avatar: Icon(
+                            user.gender == 'Nam' ? Icons.male : Icons.female,
+                            size: 16,
+                            color: Colors.blueAccent,
+                          ),
+                          label: Text(user.gender, style: const TextStyle(fontSize: 12)),
+                          backgroundColor: Colors.blue.withAlpha(20),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.statusMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey),
+                      if (user.birthYear != null && user.birthYear! > 1900)
+                        Chip(
+                          avatar: const Icon(Icons.cake, size: 16, color: Colors.orange),
+                          label: Text(
+                            '${user.birthYear} (${DateTime.now().year - user.birthYear!} tuổi)',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: Colors.orange.withAlpha(20),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        Text(
-                          user.email,
-                          style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                      if (user.hometown.isNotEmpty)
+                        Chip(
+                          avatar: const Icon(Icons.location_on, size: 16, color: Colors.redAccent),
+                          label: Text(user.hometown, style: const TextStyle(fontSize: 12)),
+                          backgroundColor: Colors.red.withAlpha(20),
+                          visualDensity: VisualDensity.compact,
                         ),
-                      ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+                  // Nút mở nhanh tường nhà của tôi
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(38),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Chỉnh sửa hồ sơ',
+                    icon: const Icon(Icons.dashboard_customize_outlined, size: 18),
+                    label: const Text('Xem Tường Nhà Của Tôi'),
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
+                        MaterialPageRoute(builder: (_) => UserWallScreen(targetUser: user)),
                       );
                     },
                   ),

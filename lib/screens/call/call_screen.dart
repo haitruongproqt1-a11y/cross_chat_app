@@ -255,7 +255,7 @@ class _CallScreenState extends State<CallScreen> {
       );
       if (mounted) setState(() {});
     } else {
-      bool shareAudio = false;
+      bool shareAudio = true;
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => StatefulBuilder(

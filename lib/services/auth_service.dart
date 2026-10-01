@@ -162,17 +162,7 @@ class AuthService {
     if (hometown != null) updates['hometown'] = hometown;
 
     await _firestore.collection('users').doc(uid).update(updates);
-
-    if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(
-        displayName: displayName,
-        photoUrl: photoUrl,
-        statusMessage: statusMessage,
-        gender: gender,
-        birthYear: birthYear,
-        hometown: hometown,
-      );
-    }
+    await loadCurrentUserData();
   }
 
   // Cập nhật trạng thái online

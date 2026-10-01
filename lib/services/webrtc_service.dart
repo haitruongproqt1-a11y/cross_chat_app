@@ -64,7 +64,7 @@ class WebRtcService {
       var currentLine = line;
       if (opusPayloadType != null && currentLine.startsWith('a=fmtp:$opusPayloadType')) {
         if (!currentLine.contains('minptime=')) {
-          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;useinbandfec=1';
+          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;useinbandfec=1;usedtx=1';
         }
       }
       modifiedLines.add(currentLine);
@@ -81,10 +81,8 @@ class WebRtcService {
       'noiseSuppression': true,
       'autoGainControl': true,
       'googEchoCancellation': true,
-      'googEchoCancellation2': true,
       'googNoiseSuppression': true,
       'googAutoGainControl': true,
-      'googAutoGainControl2': true,
       'googHighpassFilter': true,
       'googTypingNoiseDetection': true,
     };
@@ -114,9 +112,9 @@ class WebRtcService {
 
       localRenderer.srcObject = _localStream;
 
-      // Kích hoạt loa ngoài để đàm thoại 2 chiều to rõ
+      // Loa ngoài chỉ bật khi là cuộc gọi video. Cuộc gọi thoại mặc định dùng loa trong để chống rú rít và vọng âm
       try {
-        await Helper.setSpeakerphoneOn(true);
+        await Helper.setSpeakerphoneOn(isVideo);
       } catch (_) {}
     } catch (e) {
       debugPrint('Lỗi mở Camera/Mic: $e');
@@ -131,7 +129,7 @@ class WebRtcService {
           });
           localRenderer.srcObject = _localStream;
           try {
-            await Helper.setSpeakerphoneOn(true);
+            await Helper.setSpeakerphoneOn(false);
           } catch (_) {}
         } catch (_) {}
       }
@@ -165,12 +163,14 @@ class WebRtcService {
       }
     };
 
+    final isVideoCall = type == CallType.video;
+
     _peerConnection?.onAddStream = (MediaStream stream) {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
       try {
-        Helper.setSpeakerphoneOn(true);
+        Helper.setSpeakerphoneOn(isVideoCall);
       } catch (_) {}
     };
 
@@ -180,7 +180,7 @@ class WebRtcService {
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
         try {
-          Helper.setSpeakerphoneOn(true);
+          Helper.setSpeakerphoneOn(isVideoCall);
         } catch (_) {}
       }
     };
@@ -191,7 +191,7 @@ class WebRtcService {
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
         try {
-          Helper.setSpeakerphoneOn(true);
+          Helper.setSpeakerphoneOn(isVideoCall);
         } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
@@ -252,7 +252,7 @@ class WebRtcService {
         candidateQueue.clear();
 
         try {
-          await Helper.setSpeakerphoneOn(true);
+          await Helper.setSpeakerphoneOn(isVideoCall);
         } catch (_) {}
       }
     });
@@ -305,12 +305,14 @@ class WebRtcService {
       }
     };
 
+    final isVideoCall = callData['type'] == CallType.video.name;
+
     _peerConnection?.onAddStream = (MediaStream stream) {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
       try {
-        Helper.setSpeakerphoneOn(true);
+        Helper.setSpeakerphoneOn(isVideoCall);
       } catch (_) {}
     };
 
@@ -320,7 +322,7 @@ class WebRtcService {
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
         try {
-          Helper.setSpeakerphoneOn(true);
+          Helper.setSpeakerphoneOn(isVideoCall);
         } catch (_) {}
       }
     };
@@ -331,7 +333,7 @@ class WebRtcService {
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
         try {
-          Helper.setSpeakerphoneOn(true);
+          Helper.setSpeakerphoneOn(isVideoCall);
         } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
@@ -363,7 +365,7 @@ class WebRtcService {
     });
 
     try {
-      await Helper.setSpeakerphoneOn(true);
+      await Helper.setSpeakerphoneOn(isVideoCall);
     } catch (_) {}
 
     // 3. Lắng nghe caller candidates

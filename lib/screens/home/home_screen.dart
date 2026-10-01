@@ -9,6 +9,7 @@ import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../call/call_screen.dart';
 import '../nearby/nearby_friends_screen.dart';
+import '../wall/user_wall_screen.dart';
 import '../../services/call_sound_service.dart';
 import '../../services/notification_service.dart';
 import 'chat_list_view.dart';
@@ -22,16 +23,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
   StreamSubscription<QuerySnapshot>? _incomingCallSub;
   StreamSubscription<QuerySnapshot>? _incomingMessageSub;
   String? _activeIncomingCallId;
   final int _initTimestamp = DateTime.now().millisecondsSinceEpoch;
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
 
   final List<Widget> _views = const [
     ChatListView(),
     ContactsView(),
+    UserWallScreen(),
     NearbyFriendsScreen(),
     SettingsView(),
   ];
@@ -39,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _listenForIncomingMessages();
@@ -46,7 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _incomingCallSub?.cancel();
     _incomingMessageSub?.cancel();
     super.dispose();
@@ -82,6 +92,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final roomId = change.doc.id;
           if (ChatDetailScreen.activeRoomId == roomId) continue;
+
+          // CHỈ hiện thông báo khi người dùng KHÔNG ở trong ứng dụng (app chạy nền / ẩn)
+          if (_lifecycleState == AppLifecycleState.resumed) continue;
 
           final senderName = (data['lastMessageSenderName'] as String?)?.isNotEmpty == true
               ? data['lastMessageSenderName'] as String
@@ -139,12 +152,16 @@ class _HomeScreenState extends State<HomeScreen> {
       final roomId = data['roomId'] as String?;
 
       CallSoundService().playRingtone();
-      NotificationService().showLocalNotification(
-        id: callId.hashCode,
-        title: isVideo ? '📞 Cuộc gọi video đến' : '📞 Cuộc gọi thoại đến',
-        body: '$callerName đang gọi cho bạn...',
-        payload: roomId,
-      );
+
+      // Chỉ hiển thị notification banner khi app ở chế độ nền
+      if (_lifecycleState != AppLifecycleState.resumed) {
+        NotificationService().showLocalNotification(
+          id: callId.hashCode,
+          title: isVideo ? '📞 Cuộc gọi video đến' : '📞 Cuộc gọi thoại đến',
+          body: '$callerName đang gọi cho bạn...',
+          payload: roomId,
+        );
+      }
 
       _showIncomingCallDialog(
         callId: callId,
@@ -291,6 +308,11 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Danh bạ',
           ),
           NavigationDestination(
+            icon: Icon(Icons.dynamic_feed_outlined),
+            selectedIcon: Icon(Icons.dynamic_feed),
+            label: 'Nhật ký',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.explore_outlined),
             selectedIcon: Icon(Icons.explore),
             label: 'Quanh đây',
@@ -332,6 +354,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Icons.people_outline),
                 selectedIcon: Icon(Icons.people),
                 label: Text('Danh bạ'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.dynamic_feed_outlined),
+                selectedIcon: Icon(Icons.dynamic_feed),
+                label: Text('Nhật ký'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.explore_outlined),

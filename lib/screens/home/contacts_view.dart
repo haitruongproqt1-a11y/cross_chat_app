@@ -10,6 +10,7 @@ import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../nearby/nearby_friends_screen.dart';
 import '../contacts/search_friends_screen.dart';
+import '../wall/user_wall_screen.dart';
 
 class ContactsView extends StatefulWidget {
   final Function(ChatRoomModel)? onRoomSelected;
@@ -179,12 +180,20 @@ class _ContactsViewState extends State<ContactsView> {
                   itemBuilder: (context, index) {
                     final user = filtered[index];
                     return ListTile(
-                      leading: AvatarWidget(
-                        name: user.displayName,
-                        photoUrl: user.photoUrl,
-                        isOnline: user.isOnline,
-                        showBadge: true,
-                        radius: 22,
+                      leading: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => UserWallScreen(targetUser: user)),
+                          );
+                        },
+                        child: AvatarWidget(
+                          name: user.displayName,
+                          photoUrl: user.photoUrl,
+                          isOnline: user.isOnline,
+                          showBadge: true,
+                          radius: 22,
+                        ),
                       ),
                       title: Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
@@ -202,7 +211,12 @@ class _ContactsViewState extends State<ContactsView> {
                           ),
                           PopupMenuButton<String>(
                             onSelected: (val) async {
-                              if (val == 'remove') {
+                              if (val == 'wall') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => UserWallScreen(targetUser: user)),
+                                );
+                              } else if (val == 'remove') {
                                 final confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
@@ -241,6 +255,16 @@ class _ContactsViewState extends State<ContactsView> {
                               }
                             },
                             itemBuilder: (ctx) => [
+                              const PopupMenuItem(
+                                value: 'wall',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.dashboard_customize_outlined, color: Colors.blueAccent, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Xem tường nhà'),
+                                  ],
+                                ),
+                              ),
                               const PopupMenuItem(
                                 value: 'remove',
                                 child: Row(
