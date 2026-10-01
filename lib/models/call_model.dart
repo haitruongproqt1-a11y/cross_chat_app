@@ -12,6 +12,7 @@ enum CallStatus {
 }
 
 class CallSessionModel {
+  final String? roomId;
   final String callId;
   final String callerId;
   final String callerName;
@@ -25,6 +26,7 @@ class CallSessionModel {
   final Map<String, dynamic>? sdpAnswer;
 
   CallSessionModel({
+    this.roomId,
     required this.callId,
     required this.callerId,
     required this.callerName,
@@ -40,6 +42,7 @@ class CallSessionModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'roomId': roomId,
       'callId': callId,
       'callerId': callerId,
       'callerName': callerName,
@@ -56,6 +59,7 @@ class CallSessionModel {
 
   factory CallSessionModel.fromMap(Map<String, dynamic> map, String id) {
     return CallSessionModel(
+      roomId: map['roomId'],
       callId: id,
       callerId: map['callerId'] ?? '',
       callerName: map['callerName'] ?? '',

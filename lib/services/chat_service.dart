@@ -350,6 +350,50 @@ class ChatService {
     });
   }
 
+  // Lưu lịch sử cuộc gọi vào đoạn chat
+  Future<void> sendCallLogMessage({
+    required String roomId,
+    required String callerId,
+    required String callerName,
+    required bool isVideo,
+    required bool isConnected,
+    required int durationSeconds,
+  }) async {
+    try {
+      final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+
+      String content;
+      if (isConnected) {
+        final m = durationSeconds ~/ 60;
+        final s = durationSeconds % 60;
+        final timeStr = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+        content = isVideo ? 'Cuộc gọi video ($timeStr)' : 'Cuộc gọi thoại ($timeStr)';
+      } else {
+        content = isVideo ? 'Cuộc gọi video nhỡ' : 'Cuộc gọi thoại nhỡ';
+      }
+
+      final message = MessageModel(
+        id: msgRef.id,
+        senderId: callerId,
+        senderName: callerName,
+        content: content,
+        type: MessageType.call,
+        timestamp: DateTime.now(),
+        audioDurationSec: durationSeconds,
+      );
+
+      await msgRef.set(message.toMap());
+
+      await _firestore.collection('chat_rooms').doc(roomId).update({
+        'lastMessage': isVideo ? '🎥 $content' : '📞 $content',
+        'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+        'lastMessageSenderId': callerId,
+      });
+    } catch (e) {
+      // Bỏ qua lỗi nếu không thể ghi nhật ký
+    }
+  }
+
   // Tính khoảng cách giữa 2 tọa độ GPS (Công thức Haversine - đơn vị km)
   static double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
     const p = 0.017453292519943295; // Math.PI / 180

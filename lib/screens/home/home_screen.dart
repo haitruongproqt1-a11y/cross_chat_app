@@ -9,6 +9,8 @@ import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../call/call_screen.dart';
 import '../nearby/nearby_friends_screen.dart';
+import '../../services/call_sound_service.dart';
+import '../../services/notification_service.dart';
 import 'chat_list_view.dart';
 import 'contacts_view.dart';
 import 'settings_view.dart';
@@ -58,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .snapshots()
         .listen((snapshot) {
       if (snapshot.docs.isEmpty) {
+        CallSoundService().stop();
         if (_activeIncomingCallId != null && _incomingCallCtx != null) {
           if (mounted && Navigator.canPop(_incomingCallCtx!)) {
             Navigator.pop(_incomingCallCtx!);
@@ -81,11 +84,21 @@ class _HomeScreenState extends State<HomeScreen> {
       final callerName = data['callerName'] ?? 'Người dùng KINI';
       final callTypeStr = data['type'] as String?;
       final isVideo = callTypeStr == CallType.video.name;
+      final roomId = data['roomId'] as String?;
+
+      CallSoundService().playRingtone();
+      NotificationService().showLocalNotification(
+        id: callId.hashCode,
+        title: isVideo ? '📞 Cuộc gọi video đến' : '📞 Cuộc gọi thoại đến',
+        body: '$callerName đang gọi cho bạn...',
+        payload: roomId,
+      );
 
       _showIncomingCallDialog(
         callId: callId,
         callerName: callerName,
         isVideo: isVideo,
+        roomId: roomId,
       );
     });
   }
@@ -96,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String callId,
     required String callerName,
     required bool isVideo,
+    String? roomId,
   }) {
     showDialog(
       context: context,
@@ -151,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.call_end),
             label: const Text('Từ chối'),
             onPressed: () async {
+              CallSoundService().stop();
               _activeIncomingCallId = null;
               _incomingCallCtx = null;
               Navigator.pop(ctx);
@@ -170,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(isVideo ? Icons.videocam : Icons.call),
             label: const Text('Trả lời'),
             onPressed: () {
+              CallSoundService().stop();
               _activeIncomingCallId = null;
               _incomingCallCtx = null;
               Navigator.pop(ctx);
@@ -181,6 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     remoteUserName: callerName,
                     callType: isVideo ? CallType.video : CallType.audio,
                     isCaller: false,
+                    roomId: roomId,
                   ),
                 ),
               );

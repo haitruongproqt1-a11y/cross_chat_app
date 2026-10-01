@@ -50,7 +50,7 @@
         </activity>
         <!-- Service for WebRTC Screen Share (Foreground MediaProjection) -->
         <service
-            android:name="com.cloudwebrtc.webrtc.FlutterRTCForegroundService"
+            android:name=".ScreenCaptureService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
 

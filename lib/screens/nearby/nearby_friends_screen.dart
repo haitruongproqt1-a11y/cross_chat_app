@@ -39,7 +39,7 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
     'Nghệ An', 'Ninh Bình', 'Ninh Thuận', 'Phú Thọ', 'Phú Yên',
     'Quảng Bình', 'Quảng Nam', 'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị',
     'Sóc Trăng', 'Sơn La', 'Tây Ninh', 'Thái Bình', 'Thái Nguyên',
-    'Thanh Hóa', 'Thừa Thiên Huế', 'Tiền Giang', 'Trà Vinh', 'Tuyên Quang',
+    'Thanh Hóa', 'Huế', 'Tiền Giang', 'Trà Vinh', 'Tuyên Quang',
     'Vĩnh Long', 'Vĩnh Phúc', 'Yên Bái'
   ];
 
@@ -166,7 +166,13 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
                 // Lọc theo quê quán
                 if (_hometownFilter.trim().isNotEmpty && _hometownFilter != 'Tất cả') {
                   final query = _hometownFilter.trim().toLowerCase();
-                  users = users.where((u) => u.hometown.toLowerCase().contains(query)).toList();
+                  users = users.where((u) {
+                    final ht = u.hometown.toLowerCase();
+                    if (query == 'huế' || query == 'thừa thiên huế') {
+                      return ht.contains('huế');
+                    }
+                    return ht.contains(query);
+                  }).toList();
                 }
 
                 // Lọc theo độ tuổi

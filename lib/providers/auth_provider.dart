@@ -77,11 +77,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({String? displayName, String? photoUrl, String? statusMessage}) async {
+  Future<void> updateProfile({
+    String? displayName,
+    String? photoUrl,
+    String? statusMessage,
+    String? gender,
+    int? birthYear,
+    String? hometown,
+  }) async {
     await _authService.updateProfile(
       displayName: displayName,
       photoUrl: photoUrl,
       statusMessage: statusMessage,
+      gender: gender,
+      birthYear: birthYear,
+      hometown: hometown,
     );
     _currentUser = _authService.currentUser;
     notifyListeners();

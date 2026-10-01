@@ -394,6 +394,53 @@ class _MessageBubbleState extends State<MessageBubble> {
           ),
         );
 
+      case MessageType.call:
+        final isVideo = msg.content.toLowerCase().contains('video');
+        final isMissed = msg.content.toLowerCase().contains('nhỡ') || (msg.audioDurationSec == 0 || msg.audioDurationSec == null);
+        final iconColor = isMissed ? Colors.redAccent : (isMe ? Colors.white : Colors.green);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (isMissed ? Colors.red : Colors.green).withAlpha(40),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isVideo
+                    ? (isMissed ? Icons.missed_video_call : Icons.videocam)
+                    : (isMissed ? Icons.phone_missed : Icons.phone),
+                color: iconColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    msg.content,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: textColor,
+                    ),
+                  ),
+                  Text(
+                    isMissed ? 'Cuộc gọi không được trả lời' : 'Cuộc gọi đã hoàn tất',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isMe ? Colors.white70 : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
       case MessageType.text:
         return _buildRichTextWithLinks(msg.content, textColor ?? Colors.black);
     }

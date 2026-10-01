@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/call_model.dart';
@@ -116,6 +117,7 @@ class WebRtcService {
     required CallType type,
     required RTCVideoRenderer remoteRenderer,
     String? callId,
+    String? roomId,
   }) async {
     final callDoc = (callId != null && callId.isNotEmpty)
         ? _firestore.collection('calls').doc(callId)
@@ -178,6 +180,7 @@ class WebRtcService {
     await _peerConnection!.setLocalDescription(offer);
 
     final callSession = CallSessionModel(
+      roomId: roomId,
       callId: realCallId,
       callerId: callerId,
       callerName: callerName,
@@ -406,6 +409,15 @@ class WebRtcService {
     bool shareDeviceAudio = false,
   }) async {
     try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          const channel = MethodChannel('com.example.cross_chat_app/screen_share');
+          await channel.invokeMethod('startService');
+        } catch (e) {
+          debugPrint('Error starting ScreenCaptureService: $e');
+        }
+      }
+
       final mediaConstraints = <String, dynamic>{
         'video': true,
         'audio': shareDeviceAudio,
@@ -464,6 +476,15 @@ class WebRtcService {
     required RTCVideoRenderer localRenderer,
   }) async {
     try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          const channel = MethodChannel('com.example.cross_chat_app/screen_share');
+          await channel.invokeMethod('stopService');
+        } catch (e) {
+          debugPrint('Error stopping ScreenCaptureService: $e');
+        }
+      }
+
       _screenStream?.getTracks().forEach((track) {
         try {
           track.stop();
@@ -498,6 +519,14 @@ class WebRtcService {
         'status': CallStatus.ended.name,
       });
     } catch (_) {}
+
+    // Dừng service chia sẻ màn hình nếu còn đang chạy
+    if (defaultTargetPlatform == TargetPlatform.android && _isScreenSharing) {
+      try {
+        const channel = MethodChannel('com.example.cross_chat_app/screen_share');
+        channel.invokeMethod('stopService');
+      } catch (_) {}
+    }
 
     // 1. Vô hiệu hóa toàn bộ callback để không bị đơ hoặc gọi chéo trong lúc hủy
     try {

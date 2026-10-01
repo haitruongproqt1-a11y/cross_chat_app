@@ -1,9 +1,9 @@
 {
-  "version": "1.0.4",
-  "build_number": 5,
-  "release_date": "2026-10-01",
-  "changelog": "- Sửa triệt để lỗi không lưu phòng chat trong danh sách Tin Nhắn (sắp xếp client-side, khắc phục thiếu composite index Firestore)\n- Thêm nút Kết Bạn trực tiếp khi đang chat với người lạ và trong kết quả tìm kiếm\n- Tính năng Quản lý bạn bè & Quyền riêng tư: Xóa bạn bè, Chặn tin nhắn & cuộc gọi, Tùy chọn tìm kiếm qua Tên, Gmail, ID\n- Nâng cấp Tìm Quanh Đây: Bộ lọc độ tuổi, danh mục 63 tỉnh thành phố VN mới nhất, đệm an toàn phím điều hướng Android\n- Trình Cập Nhật Trực Tiếp Trong Ứng Dụng: Tải file APK tốc độ cao với thanh tiến trình trực tiếp, tự động mở cài đặt ngay trong app\n- Sửa triệt để lỗi văng ứng dụng khi Chia sẻ màn hình (cấu hình Foreground Service MediaProjection)\n- Hỗ trợ chia sẻ âm thanh thiết bị (nhạc/video) trong khi vẫn đàm thoại micro 2 chiều to rõ\n- Tối ưu bộ lọc âm thanh WebRTC chống rè, chống vang, nghe rõ trên cả giả lập và điện thoại\n- Sửa lỗi đơ/treo khi kết thúc cuộc gọi video bằng cơ chế giải phóng renderers và unhook sự kiện an toàn",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.4/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.4/update_v1.0.4.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.4/app-arm64-v8a-release.apk"
+  "version": "1.0.5",
+  "build_number": 6,
+  "release_date": "2026-10-02",
+  "changelog": "- Khắc phục triệt để chia sẻ màn hình trên Android 14/15: Tự động khởi chạy Foreground Service MediaProjection, không bị đứng hình khi chuyển sang app khác\n- Thông báo chia sẻ màn hình dính trên thanh trạng thái: Chạm 1 chạm là lập tức quay lại cuộc gọi ngay từ bất kỳ đâu\n- Tích hợp Nhạc chuông cuộc gọi đến và Nhạc chờ ('tút... tút...') chuẩn viễn thông riêng cho ứng dụng\n- Tự động lưu lịch sử cuộc gọi thoại và video (kèm thời lượng đàm thoại và cuộc gọi nhỡ) trực tiếp vào đoạn chat 2 người\n- Giao diện Chỉnh sửa Hồ sơ cá nhân: Bổ sung Giới tính (Nam/Nữ/Khác), Năm sinh (tự tính tuổi), Quê quán hỗ trợ nhập tự do và chọn nhanh\n- Nâng cấp danh bạ 63 tỉnh thành Việt Nam (chuẩn hóa Huế) và tìm kiếm bạn bè thông minh",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/update_v1.0.5.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.5/app-arm64-v8a-release.apk"
 }

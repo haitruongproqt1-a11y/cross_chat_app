@@ -146,6 +146,9 @@ class AuthService {
     String? displayName,
     String? photoUrl,
     String? statusMessage,
+    String? gender,
+    int? birthYear,
+    String? hometown,
   }) async {
     if (_auth.currentUser == null) return;
     final uid = _auth.currentUser!.uid;
@@ -154,6 +157,9 @@ class AuthService {
     if (displayName != null) updates['displayName'] = displayName;
     if (photoUrl != null) updates['photoUrl'] = photoUrl;
     if (statusMessage != null) updates['statusMessage'] = statusMessage;
+    if (gender != null) updates['gender'] = gender;
+    if (birthYear != null) updates['birthYear'] = birthYear;
+    if (hometown != null) updates['hometown'] = hometown;
 
     await _firestore.collection('users').doc(uid).update(updates);
 
@@ -162,6 +168,9 @@ class AuthService {
         displayName: displayName,
         photoUrl: photoUrl,
         statusMessage: statusMessage,
+        gender: gender,
+        birthYear: birthYear,
+        hometown: hometown,
       );
     }
   }

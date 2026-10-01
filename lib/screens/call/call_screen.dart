@@ -4,6 +4,8 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/call_model.dart';
 import '../../services/webrtc_service.dart';
+import '../../services/call_sound_service.dart';
+import '../../services/chat_service.dart';
 
 class CallScreen extends StatefulWidget {
   final String callId;
@@ -13,6 +15,7 @@ class CallScreen extends StatefulWidget {
   final String? callerId;
   final String? callerName;
   final String? receiverId;
+  final String? roomId;
 
   const CallScreen({
     super.key,
@@ -23,6 +26,7 @@ class CallScreen extends StatefulWidget {
     this.callerId,
     this.callerName,
     this.receiverId,
+    this.roomId,
   });
 
   @override
@@ -90,6 +94,7 @@ class _CallScreenState extends State<CallScreen> {
       };
 
       _webrtcService.onConnectionConnected = () {
+        CallSoundService().stop();
         if (!_isConnected && mounted) {
           setState(() {
             _isConnected = true;
@@ -100,6 +105,7 @@ class _CallScreenState extends State<CallScreen> {
       };
 
       _webrtcService.onConnectionDisconnected = () {
+        CallSoundService().stop();
         _closeCallScreen('Cuộc gọi bị mất kết nối');
       };
 
@@ -116,6 +122,7 @@ class _CallScreenState extends State<CallScreen> {
       }
 
       if (widget.isCaller) {
+        CallSoundService().playRingback();
         await _webrtcService.startCall(
           callerId: widget.callerId ?? '',
           callerName: widget.callerName ?? '',
@@ -124,6 +131,7 @@ class _CallScreenState extends State<CallScreen> {
           type: widget.callType,
           remoteRenderer: _remoteRenderer,
           callId: widget.callId,
+          roomId: widget.roomId,
         );
       } else {
         await _webrtcService.answerCall(
@@ -179,9 +187,22 @@ class _CallScreenState extends State<CallScreen> {
     if (_isCallEnded) return;
     _isCallEnded = true;
 
+    CallSoundService().stop();
+
     _callTimer?.cancel();
     _pingTimer?.cancel();
     _callSubscription?.cancel();
+
+    if (widget.roomId != null && widget.isCaller) {
+      ChatService().sendCallLogMessage(
+        roomId: widget.roomId!,
+        callerId: widget.callerId ?? '',
+        callerName: widget.callerName ?? '',
+        isVideo: widget.callType == CallType.video,
+        isConnected: _isConnected,
+        durationSeconds: _callSeconds,
+      );
+    }
 
     // Gỡ srcObject khỏi renderers trước khi đóng để tránh crash/treo luồng native WebRTC
     try {
@@ -209,6 +230,7 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    CallSoundService().stop();
     _callTimer?.cancel();
     _pingTimer?.cancel();
     _callSubscription?.cancel();

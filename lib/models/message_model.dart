@@ -5,6 +5,7 @@ enum MessageType {
   audio,
   file,
   location,
+  call,
 }
 
 class MessageModel {

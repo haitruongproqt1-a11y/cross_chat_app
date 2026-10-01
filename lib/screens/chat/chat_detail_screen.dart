@@ -213,6 +213,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           callerId: currentUser.uid,
           callerName: currentUser.displayName,
           receiverId: receiverId,
+          roomId: widget.room.id,
         ),
       ),
     );
