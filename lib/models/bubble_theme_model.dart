@@ -77,9 +77,11 @@ class BubbleThemes {
       name: 'Thỏ mây ngọt ngào',
       icon: '🐰',
       subtitle: 'Thỏ ngọc & đám mây vàng kem',
-      sentBgColor: Color(0xFF007BFF),
+      sentBgColor: Color(0xFFE5A952),
+      sentBgGradientEnd: Color(0xFFC7852E),
       sentTextColor: Colors.white,
-      sentBorderColor: Color(0xFF0062CC),
+      sentBorderColor: Color(0xFFA86B1E),
+      sentBorderWidth: 1.5,
       receivedBgColor: Color(0xFFFFFDF8),
       receivedTextColor: Color(0xFF33271A),
       receivedBorderColor: Color(0xFFE8D3B2),
@@ -90,7 +92,7 @@ class BubbleThemes {
       badgeColor: Color(0xFFFFECC8),
       boxShadow: [
         BoxShadow(
-          color: Color(0x1AE8C28A),
+          color: Color(0x26C7852E),
           offset: Offset(0, 2),
           blurRadius: 6,
         ),

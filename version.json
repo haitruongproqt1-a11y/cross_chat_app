@@ -1,9 +1,9 @@
 {
-  "version": "1.0.18",
-  "build_number": 19,
+  "version": "1.0.19",
+  "build_number": 20,
   "release_date": "2026-10-03",
-  "changelog": "- Khắc phục triệt để lỗi ERR_UNKNOWN_URL_SCHEME trên TikTok nhúng: Chặn các intent/deep link app tự động, kích hoạt phát video và livestream TikTok mượt mà 100%\n- 20 kiểu bong bóng chat nghệ thuật và dễ thương: Thỏ mây ngọt ngào, Capybara đội cam, Rái cá vui nhộn, Diva lộng lẫy, Ếch xanh, Vịt vàng, Pepe thả tim, Cyberpunk Neon, Dải Ngân Hà, Matcha Latte...\n- Cài đặt hình nền cuộc trò chuyện riêng: 12 mẫu hình nền nghệ thuật (Bầu trời ngọt ngào, Jazz Club, Thuyền trôi dạt, Màn sương oải hương, Caro pastel...) và hỗ trợ tải ảnh tùy thích từ thư viện thiết bị\n- Xem trước trực tiếp (Live Preview) kiểu bong bóng và hình nền trước khi áp dụng\n- Đồng bộ hình nền và kiểu bong bóng theo thời gian thực cho mọi thành viên trong cuộc trò chuyện",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.18/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.18/update_v1.0.18.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.18/app-arm64-v8a-release.apk"
+  "changelog": "- Khắc phục triệt để lỗi TikTok vuốt 1-2 video bị màn hình đen: Chuyển đổi định danh sang máy tính bảng Touch (iPad Safari), tự động gỡ bỏ modal chặn ngầm của TikTok, giữ luồng cuộn mượt mà vô tận\n- Thêm nút Đăng nhập tài khoản TikTok trực tiếp (👤): Lưu phiên đăng nhập an toàn, thả tim ❤️, bình luận 💬 và trải nghiệm luồng video đề xuất cá nhân hóa\n- Sửa hiển thị bong bóng chat đúng chủ sở hữu: Người dùng cài đặt kiểu bong bóng nào thì tin nhắn gửi đi của chính người đó sẽ mang phong cách và sticker trang trí của kiểu đó (🐰 thỏ mây, 🦫 capybara, 🦆 vịt/ếch,...), người nhận không cài đặt thì hiển thị bong bóng mặc định, người nhận có cài đặt thì hiển thị kiểu của người nhận\n- Cập nhật Live Preview xem trước trực tiếp: Hiển thị sticker và màu sắc chuẩn xác ngay trên bong bóng gửi đi của bạn",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/update_v1.0.19.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/app-arm64-v8a-release.apk"
 }

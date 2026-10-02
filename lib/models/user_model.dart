@@ -29,6 +29,7 @@ class UserModel {
   final bool allowSearchByName;
   final bool allowSearchByEmail;
   final bool allowSearchById;
+  final String? bubbleThemeId; // Kiểu bong bóng cá nhân của người dùng
 
   UserModel({
     required this.uid,
@@ -56,6 +57,7 @@ class UserModel {
     this.allowSearchByName = true,
     this.allowSearchByEmail = true,
     this.allowSearchById = true,
+    this.bubbleThemeId,
   });
 
   Map<String, dynamic> toMap() {
@@ -85,6 +87,7 @@ class UserModel {
       'allowSearchByName': allowSearchByName,
       'allowSearchByEmail': allowSearchByEmail,
       'allowSearchById': allowSearchById,
+      'bubbleThemeId': bubbleThemeId,
     };
   }
 
@@ -128,6 +131,7 @@ class UserModel {
       allowSearchByName: map['allowSearchByName'] ?? true,
       allowSearchByEmail: map['allowSearchByEmail'] ?? true,
       allowSearchById: map['allowSearchById'] ?? true,
+      bubbleThemeId: map['bubbleThemeId'],
     );
   }
 
@@ -150,6 +154,7 @@ class UserModel {
     bool? shareLocation,
     double? latitude,
     double? longitude,
+    String? bubbleThemeId,
   }) {
     return UserModel(
       uid: uid,
@@ -177,6 +182,7 @@ class UserModel {
       allowSearchByName: allowSearchByName,
       allowSearchByEmail: allowSearchByEmail,
       allowSearchById: allowSearchById,
+      bubbleThemeId: bubbleThemeId ?? this.bubbleThemeId,
     );
   }
 }

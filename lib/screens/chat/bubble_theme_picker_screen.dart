@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/bubble_theme_model.dart';
 import '../../services/chat_service.dart';
+import '../../providers/auth_provider.dart';
 
 class BubbleThemePickerScreen extends StatefulWidget {
   final String roomId;
   final String currentThemeId;
+  final String? userId;
   final Function(String newThemeId)? onThemeSaved;
 
   const BubbleThemePickerScreen({
     super.key,
     required this.roomId,
     required this.currentThemeId,
+    this.userId,
     this.onThemeSaved,
   });
 
@@ -31,10 +35,23 @@ class _BubbleThemePickerScreenState extends State<BubbleThemePickerScreen> {
   Future<void> _saveTheme() async {
     setState(() => _isSaving = true);
     try {
-      await ChatService().updateRoomTheme(
-        roomId: widget.roomId,
-        bubbleThemeId: _selectedThemeId,
-      );
+      // Lưu vào hồ sơ cá nhân người dùng để áp dụng cho mọi tin nhắn người dùng gửi
+      if (widget.userId != null && widget.userId!.isNotEmpty) {
+        await ChatService().updateUserBubbleTheme(
+          userId: widget.userId!,
+          bubbleThemeId: _selectedThemeId,
+        );
+        if (mounted) {
+          Provider.of<AuthProvider>(context, listen: false).updateBubbleThemeId(_selectedThemeId);
+        }
+      }
+      // Lưu vào phòng chat để tương thích
+      if (widget.roomId.isNotEmpty) {
+        await ChatService().updateRoomTheme(
+          roomId: widget.roomId,
+          bubbleThemeId: _selectedThemeId,
+        );
+      }
       if (widget.onThemeSaved != null) {
         widget.onThemeSaved!(_selectedThemeId);
       }
@@ -42,7 +59,7 @@ class _BubbleThemePickerScreenState extends State<BubbleThemePickerScreen> {
         Navigator.pop(context, _selectedThemeId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã cập nhật kiểu bong bóng trò chuyện!'),
+            content: Text('Đã cập nhật kiểu bong bóng trò chuyện của bạn!'),
             backgroundColor: Color(0xFFFE0979),
           ),
         );
@@ -121,36 +138,61 @@ class _BubbleThemePickerScreenState extends State<BubbleThemePickerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Bong bóng người gửi (Me)
+                // Bong bóng người gửi (Me - Kiểu bạn chọn sẽ xuất hiện tại đây)
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: activeTheme.sentBgColor,
-                      gradient: activeTheme.sentBgGradientEnd != null
-                          ? LinearGradient(
-                              colors: [activeTheme.sentBgColor, activeTheme.sentBgGradientEnd!],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      borderRadius: BorderRadius.circular(activeTheme.borderRadius),
-                      border: Border.all(
-                        color: activeTheme.sentBorderColor,
-                        width: activeTheme.sentBorderWidth,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: activeTheme.sentBgColor,
+                          gradient: activeTheme.sentBgGradientEnd != null
+                              ? LinearGradient(
+                                  colors: [activeTheme.sentBgColor, activeTheme.sentBgGradientEnd!],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          borderRadius: BorderRadius.circular(activeTheme.borderRadius),
+                          border: Border.all(
+                            color: activeTheme.sentBorderColor,
+                            width: activeTheme.sentBorderWidth,
+                          ),
+                          boxShadow: activeTheme.boxShadow,
+                        ),
+                        child: Text(
+                          'Nay bạn có thể thay đổi kiểu bong bóng và cuộc trò chuyện sẽ có giao diện mới. Quá ngầu!',
+                          style: TextStyle(
+                            color: activeTheme.sentTextColor,
+                            fontSize: 14.5,
+                            height: 1.35,
+                          ),
+                        ),
                       ),
-                      boxShadow: activeTheme.boxShadow,
-                    ),
-                    child: Text(
-                      'Nay bạn có thể thay đổi kiểu bong bóng và cuộc trò chuyện sẽ có giao diện mới. Quá ngầu!',
-                      style: TextStyle(
-                        color: activeTheme.sentTextColor,
-                        fontSize: 14.5,
-                        height: 1.35,
-                      ),
-                    ),
+                      // Sticker góc trên phải (như thỏ mây, capybara)
+                      if (activeTheme.stickerTopRight != null)
+                        Positioned(
+                          top: -14,
+                          right: 8,
+                          child: Text(
+                            activeTheme.stickerTopRight!,
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                        ),
+                      // Sticker góc trên trái (như đám mây)
+                      if (activeTheme.stickerTopLeft != null)
+                        Positioned(
+                          top: -10,
+                          left: 4,
+                          child: Text(
+                            activeTheme.stickerTopLeft!,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 10),

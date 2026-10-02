@@ -88,6 +88,8 @@ class ChatService {
               isRecalled: msg.isRecalled,
               isDeleted: msg.isDeleted,
               mediaUrl: msg.mediaUrl,
+              mediaUrls: msg.mediaUrls,
+              mediaTypes: msg.mediaTypes,
               fileName: msg.fileName,
               fileSize: msg.fileSize,
               audioDurationSec: msg.audioDurationSec,
@@ -98,6 +100,7 @@ class ChatService {
               replyToMessageId: msg.replyToMessageId,
               replyToContent: msg.replyToContent,
               replyToSenderName: msg.replyToSenderName,
+              bubbleThemeId: msg.bubbleThemeId,
             );
           })
           .whereType<MessageModel>()
@@ -242,6 +245,7 @@ class ChatService {
     String? replyToMessageId,
     String? replyToContent,
     String? replyToSenderName,
+    String? bubbleThemeId,
   }) async {
     final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
 
@@ -268,6 +272,7 @@ class ChatService {
       replyToMessageId: replyToMessageId,
       replyToContent: replyToContent,
       replyToSenderName: replyToSenderName,
+      bubbleThemeId: bubbleThemeId ?? sender.bubbleThemeId,
     );
 
     await msgRef.set(message.toMap());
@@ -524,6 +529,13 @@ class ChatService {
     if (updateData.isNotEmpty) {
       await _firestore.collection('chat_rooms').doc(roomId).update(updateData);
     }
+  }
+
+  // Cập nhật kiểu bong bóng riêng của người dùng
+  Future<void> updateUserBubbleTheme({required String userId, required String bubbleThemeId}) async {
+    await _firestore.collection('users').doc(userId).update({
+      'bubbleThemeId': bubbleThemeId,
+    });
   }
 
   // Tính khoảng cách giữa 2 tọa độ GPS (Công thức Haversine - đơn vị km)

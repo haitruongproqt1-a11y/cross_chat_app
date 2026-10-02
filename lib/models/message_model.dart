@@ -37,6 +37,7 @@ class MessageModel {
   final String? replyToMessageId;
   final String? replyToContent;
   final String? replyToSenderName;
+  final String? bubbleThemeId; // Kiểu bong bóng cá nhân của người gửi
 
   MessageModel({
     required this.id,
@@ -63,6 +64,7 @@ class MessageModel {
     this.replyToMessageId,
     this.replyToContent,
     this.replyToSenderName,
+    this.bubbleThemeId,
   });
 
   Map<String, dynamic> toMap() {
@@ -91,6 +93,7 @@ class MessageModel {
       'replyToMessageId': replyToMessageId,
       'replyToContent': replyToContent,
       'replyToSenderName': replyToSenderName,
+      'bubbleThemeId': bubbleThemeId,
     };
   }
 
@@ -134,6 +137,7 @@ class MessageModel {
       replyToMessageId: map['replyToMessageId'],
       replyToContent: map['replyToContent'],
       replyToSenderName: map['replyToSenderName'],
+      bubbleThemeId: map['bubbleThemeId'],
     );
   }
 }

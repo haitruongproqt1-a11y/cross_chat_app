@@ -178,7 +178,9 @@ class _MessageBubbleState extends State<MessageBubble> {
     final isMe = widget.isMe;
     final isRecalled = widget.message.isRecalled;
     final msg = widget.message;
-    final bubbleTheme = BubbleThemes.getTheme(widget.bubbleThemeId);
+    // Kiểu bong bóng: Ưu tiên theme của tin nhắn (người gửi đã chọn), nếu tin cũ và là isMe thì dùng theme của tôi
+    final activeThemeId = widget.message.bubbleThemeId ?? (isMe ? widget.bubbleThemeId : null);
+    final bubbleTheme = BubbleThemes.getTheme(activeThemeId);
     final isCustomTheme = bubbleTheme.id != 'default';
 
     final uniqueEmojis = msg.reactions.values.toSet().toList();
@@ -420,24 +422,24 @@ class _MessageBubbleState extends State<MessageBubble> {
                 ),
 
               // Sticker trang trí góc trên phải (như thỏ mây, capybara, hoa...)
-              if (!isMe && !isRecalled && isCustomTheme && bubbleTheme.stickerTopRight != null)
+              if (!isRecalled && isCustomTheme && bubbleTheme.stickerTopRight != null)
                 Positioned(
-                  top: -10,
+                  top: -12,
                   right: 8,
                   child: Text(
                     bubbleTheme.stickerTopRight!,
-                    style: const TextStyle(fontSize: 17),
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
 
               // Sticker trang trí góc trên trái (như mây, đốm sáng...)
-              if (!isMe && !isRecalled && isCustomTheme && bubbleTheme.stickerTopLeft != null)
+              if (!isRecalled && isCustomTheme && bubbleTheme.stickerTopLeft != null)
                 Positioned(
-                  top: -8,
+                  top: -10,
                   left: 6,
                   child: Text(
                     bubbleTheme.stickerTopLeft!,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 15),
                   ),
                 ),
             ],
@@ -468,7 +470,8 @@ class _MessageBubbleState extends State<MessageBubble> {
       );
     }
 
-    final bubbleTheme = BubbleThemes.getTheme(widget.bubbleThemeId);
+    final activeThemeId = widget.message.bubbleThemeId ?? (isMe ? widget.bubbleThemeId : null);
+    final bubbleTheme = BubbleThemes.getTheme(activeThemeId);
     final isCustomTheme = bubbleTheme.id != 'default';
     final textColor = isCustomTheme
         ? (isMe ? bubbleTheme.sentTextColor : bubbleTheme.receivedTextColor)

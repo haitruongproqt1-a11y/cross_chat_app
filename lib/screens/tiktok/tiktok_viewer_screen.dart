@@ -42,7 +42,7 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setUserAgent(
-        'Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.127 Mobile Safari/537.36',
+        'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
       )
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -68,6 +68,7 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
                 _isLoading = false;
               });
             }
+            _injectAntiModalScript();
           },
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url.toLowerCase();
@@ -154,6 +155,82 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
     }
   }
 
+  void _injectAntiModalScript() {
+    const script = '''
+(function() {
+  if (!document.getElementById('tiktok-bypass-css')) {
+    const style = document.createElement('style');
+    style.id = 'tiktok-bypass-css';
+    style.innerHTML = `
+      [class*="login-modal"],
+      [class*="LoginModal"],
+      [class*="mask-wrapper"],
+      [class*="modal-mask"],
+      [class*="DivLoginModalContainer"],
+      [class*="DivModalContainer"],
+      [class*="DivBannerContainer"],
+      [class*="DivMobileDownloadBanner"],
+      [class*="DivOpenApp"],
+      [class*="tiktok-modal"],
+      div[role="dialog"] {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }
+      html, body {
+        overflow: auto !important;
+        position: static !important;
+        touch-action: pan-y !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function purgeTikTokModals() {
+    try {
+      const selectors = [
+        '[class*="login-modal"]',
+        '[class*="LoginModal"]',
+        '[class*="mask-wrapper"]',
+        '[class*="modal-mask"]',
+        '[class*="DivLoginModalContainer"]',
+        '[class*="DivModalContainer"]',
+        '[class*="DivBannerContainer"]',
+        '[class*="DivMobileDownloadBanner"]',
+        '[class*="DivOpenApp"]',
+        'div[role="dialog"]'
+      ];
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => el.remove());
+      });
+      if (document.body) {
+        document.body.style.overflow = 'auto';
+        document.body.style.position = 'static';
+        document.body.classList.remove('tiktok-modal-open');
+      }
+      if (document.documentElement) {
+        document.documentElement.style.overflow = 'auto';
+        document.documentElement.classList.remove('tiktok-modal-open');
+      }
+      const videos = document.querySelectorAll('video');
+      videos.forEach(v => {
+        if (v.paused && v.readyState >= 2) {
+          v.play().catch(() => {});
+        }
+      });
+    } catch(e) {}
+  }
+
+  purgeTikTokModals();
+  if (!window.__tiktok_purge_interval) {
+    window.__tiktok_purge_interval = setInterval(purgeTikTokModals, 1000);
+  }
+})();
+''';
+    _controller.runJavaScript(script);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,6 +271,13 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined, color: Color(0xFFFE0979), size: 24),
+            tooltip: 'Đăng nhập TikTok (Xem & Thả tim không giới hạn)',
+            onPressed: () {
+              _controller.loadRequest(Uri.parse('https://www.tiktok.com/login'));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white, size: 22),
             tooltip: 'Làm mới',

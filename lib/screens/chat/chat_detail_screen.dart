@@ -379,6 +379,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             final myBlocked = List<String>.from(myData?['blockedUsers'] ?? []);
             final isFriend = myFriends.contains(otherUserId);
             final isBlockedByMe = myBlocked.contains(otherUserId);
+            final myBubbleThemeId = myData?['bubbleThemeId'] as String? ?? currentUser?.bubbleThemeId;
 
             return Scaffold(
               appBar: AppBar(
@@ -503,7 +504,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       MaterialPageRoute(
                         builder: (_) => BubbleThemePickerScreen(
                           roomId: widget.room.id,
-                          currentThemeId: currentRoom.bubbleThemeId ?? 'default',
+                          currentThemeId: myBubbleThemeId ?? currentRoom.bubbleThemeId ?? 'default',
+                          userId: currentUser.uid,
                         ),
                       ),
                     );
@@ -730,7 +732,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           isMe: isMe,
                           roomId: widget.room.id,
                           currentUserId: currentUser?.uid ?? '',
-                          bubbleThemeId: currentRoom.bubbleThemeId,
+                          bubbleThemeId: isMe ? (myBubbleThemeId ?? currentUser?.bubbleThemeId) : null,
                           onReply: () {
                             setState(() {
                               _replyingToMessage = msg;

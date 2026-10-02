@@ -186,6 +186,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateBubbleThemeId(String bubbleThemeId) {
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(bubbleThemeId: bubbleThemeId);
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     await _authService.signOut();
     _currentUser = null;
