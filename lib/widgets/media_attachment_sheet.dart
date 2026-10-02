@@ -38,14 +38,14 @@ class MediaAttachmentSheet extends StatelessWidget {
               context,
               icon: Icons.photo_library,
               color: Colors.purple,
-              label: 'Ảnh thư viện',
+              label: 'Ảnh (Tối đa 10)',
               action: AttachmentAction.gallery,
             ),
             _buildActionItem(
               context,
               icon: Icons.videocam,
               color: Colors.orange,
-              label: 'Gửi Video',
+              label: 'Video (Tối đa 10)',
               action: AttachmentAction.video,
             ),
             _buildActionItem(

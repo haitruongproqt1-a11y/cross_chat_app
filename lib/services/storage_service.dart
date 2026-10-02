@@ -26,6 +26,22 @@ class StorageService {
     }
   }
 
+  // Chọn nhiều ảnh từ Thư viện (Tối đa 10 ảnh chuẩn Zalo)
+  Future<List<XFile>> pickMultiImage({int maxImages = 10}) async {
+    try {
+      final images = await _picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+        limit: maxImages,
+      );
+      return images.take(maxImages).toList();
+    } catch (e) {
+      debugPrint('Lỗi chọn nhiều ảnh: $e');
+      return [];
+    }
+  }
+
   // Pick Video from Gallery
   Future<XFile?> pickVideo() async {
     try {
@@ -37,6 +53,22 @@ class StorageService {
       debugPrint('Error picking video: $e');
       return null;
     }
+  }
+
+  // Chọn nhiều video từ Thư viện (Tối đa 10 video chuẩn Zalo)
+  Future<List<PlatformFile>> pickMultiVideo({int maxVideos = 10}) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        return result.files.take(maxVideos).toList();
+      }
+    } catch (e) {
+      debugPrint('Lỗi chọn nhiều video: $e');
+    }
+    return [];
   }
 
   // Pick Document (PDF, Audio, DOCX, ZIP, etc.)

@@ -313,9 +313,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             label: 'Quanh đây',
           ),
           NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'Trợ lý AI',
+            icon: Icon(Icons.dynamic_feed_outlined),
+            selectedIcon: Icon(Icons.dynamic_feed),
+            label: 'Tường',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
@@ -361,9 +361,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 label: Text('Quanh đây'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.auto_awesome_outlined),
-                selectedIcon: Icon(Icons.auto_awesome),
-                label: Text('Trợ lý AI'),
+                icon: Icon(Icons.dynamic_feed_outlined),
+                selectedIcon: Icon(Icons.dynamic_feed),
+                label: Text('Tường'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.person_outline),

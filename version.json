@@ -1,9 +1,9 @@
 {
-  "version": "1.0.15",
-  "build_number": 16,
-  "release_date": "2026-10-02",
-  "changelog": "- Đăng ký tài khoản KINI mới: Đăng ký bằng Tên đăng nhập, hỗ trợ 15 câu hỏi bảo mật để tự khôi phục mật khẩu khi quên\n- Khôi phục mật khẩu an toàn: Xác thực trực tiếp qua câu hỏi bí mật đã chọn mà không cần email ngoài\n- Nâng cấp toàn diện Tìm bạn quanh đây: 2 tab Khám phá & Tôi, bộ lọc đa dạng (50km/100km, giới tính, tỉnh thành, độ tuổi, tình trạng), bảo vệ quyền riêng tư (chỉ ai bật chia sẻ mới tìm thấy và được tìm thấy)\n- Giao diện tab Cá nhân mới: Quản lý đăng nhập an toàn với mật khẩu băm, cập nhật câu hỏi bảo mật, phiên thiết bị duy nhất\n- Bảo tồn 100% tính năng gọi thoại, gọi video, chia sẻ màn hình và chất lượng âm thanh",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.15/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.15/update_v1.0.15.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.15/app-arm64-v8a-release.apk"
+  "version": "1.0.16",
+  "build_number": 17,
+  "release_date": "2026-10-03",
+  "changelog": "- Gửi đa ảnh và đa video giống hệt Zalo: Cho phép chọn và gửi tới 10 ảnh hoặc 10 video cùng lúc trong 1 tin nhắn\n- Bố cục lưới thông minh chuẩn Zalo: Tự động sắp xếp 1-10 ảnh/video thành layout lưới đẹp mắt (2-2-3-3 cho 10 file), huy hiệu HD sắc nét và huy hiệu thời lượng video (HD | 00:xx) kèm nút Play\n- Trình xem thư viện ảnh/video toàn màn hình: Vuốt mượt mà chuyển ảnh/video, zoom phóng to thu nhỏ ảnh, xem trực tiếp video có thanh tiến trình và nút Play/Pause\n- Đổi tên Tab 4 thành 'Tường': Thay thế 'Trợ lý AI' thành 'Tường' với biểu tượng bảng tin nhật ký theo đúng yêu cầu\n- Bảo tồn 100% các tính năng gọi thoại, gọi video, chia sẻ màn hình âm thanh và tìm quanh đây",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/update_v1.0.16.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/app-arm64-v8a-release.apk"
 }

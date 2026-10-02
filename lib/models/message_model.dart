@@ -23,6 +23,8 @@ class MessageModel {
 
   // Media & Location specific fields
   final String? mediaUrl;
+  final List<String> mediaUrls; // Hỗ trợ gửi nhiều ảnh & video (tối đa 10)
+  final List<String> mediaTypes; // 'image' hoặc 'video' tương ứng
   final String? fileName;
   final int? fileSize;
   final int? audioDurationSec;
@@ -49,6 +51,8 @@ class MessageModel {
     this.isRecalled = false,
     this.isDeleted = false,
     this.mediaUrl,
+    this.mediaUrls = const [],
+    this.mediaTypes = const [],
     this.fileName,
     this.fileSize,
     this.audioDurationSec,
@@ -75,6 +79,8 @@ class MessageModel {
       'isRecalled': isRecalled,
       'isDeleted': isDeleted,
       'mediaUrl': mediaUrl,
+      'mediaUrls': mediaUrls,
+      'mediaTypes': mediaTypes,
       'fileName': fileName,
       'fileSize': fileSize,
       'audioDurationSec': audioDurationSec,
@@ -89,6 +95,15 @@ class MessageModel {
   }
 
   factory MessageModel.fromMap(Map<String, dynamic> map, String id) {
+    final rawUrls = List<String>.from(map['mediaUrls'] ?? []);
+    final singleUrl = map['mediaUrl'] as String?;
+    final resolvedUrls = rawUrls.isNotEmpty ? rawUrls : (singleUrl != null && singleUrl.isNotEmpty ? [singleUrl] : <String>[]);
+
+    final rawTypes = List<String>.from(map['mediaTypes'] ?? []);
+    final resolvedTypes = rawTypes.isNotEmpty
+        ? rawTypes
+        : List<String>.filled(resolvedUrls.length, map['type'] == 'video' ? 'video' : 'image');
+
     return MessageModel(
       id: id,
       senderId: map['senderId'] ?? '',
@@ -106,7 +121,9 @@ class MessageModel {
       readBy: List<String>.from(map['readBy'] ?? []),
       isRecalled: map['isRecalled'] ?? false,
       isDeleted: map['isDeleted'] ?? false,
-      mediaUrl: map['mediaUrl'],
+      mediaUrl: singleUrl ?? (resolvedUrls.isNotEmpty ? resolvedUrls.first : null),
+      mediaUrls: resolvedUrls,
+      mediaTypes: resolvedTypes,
       fileName: map['fileName'],
       fileSize: map['fileSize'],
       audioDurationSec: map['audioDurationSec'],

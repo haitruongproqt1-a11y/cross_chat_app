@@ -122,10 +122,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (currentUser == null) return;
 
-    if (action == AttachmentAction.camera || action == AttachmentAction.gallery) {
-      final xfile = await _storageService.pickImage(
-        source: action == AttachmentAction.camera ? ImageSource.camera : ImageSource.gallery,
-      );
+    if (action == AttachmentAction.camera) {
+      final xfile = await _storageService.pickImage(source: ImageSource.camera);
       if (xfile != null) {
         setState(() => _isUploading = true);
         final bytes = await xfile.readAsBytes();
@@ -137,38 +135,83 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
         setState(() => _isUploading = false);
 
-          if (url != null) {
+        if (url != null) {
           await _chatService.sendMessage(
             roomId: widget.room.id,
             sender: currentUser,
             content: 'Hình ảnh',
             type: MessageType.image,
             mediaUrl: url,
+            mediaUrls: [url],
+            mediaTypes: ['image'],
             fileName: xfile.name,
           );
         }
       }
-    } else if (action == AttachmentAction.video) {
-      final xfile = await _storageService.pickVideo();
-      if (xfile != null) {
+    } else if (action == AttachmentAction.gallery) {
+      final xfiles = await _storageService.pickMultiImage(maxImages: 10);
+      if (xfiles.isNotEmpty) {
         setState(() => _isUploading = true);
-        final bytes = await xfile.readAsBytes();
-        final url = await _storageService.uploadFile(
-          path: xfile.path,
-          fileName: xfile.name,
-          folder: 'chat_videos/${widget.room.id}',
-          fileBytes: bytes,
-        );
+        final List<String> uploadedUrls = [];
+
+        for (var i = 0; i < xfiles.length; i++) {
+          final xf = xfiles[i];
+          final bytes = await xf.readAsBytes();
+          final url = await _storageService.uploadFile(
+            path: xf.path,
+            fileName: xf.name,
+            folder: 'chat_images/${widget.room.id}',
+            fileBytes: bytes,
+          );
+          if (url != null && url.isNotEmpty) {
+            uploadedUrls.add(url);
+          }
+        }
+
         setState(() => _isUploading = false);
 
-        if (url != null) {
+        if (uploadedUrls.isNotEmpty) {
           await _chatService.sendMessage(
             roomId: widget.room.id,
             sender: currentUser,
-            content: 'Video',
+            content: uploadedUrls.length > 1 ? '[${uploadedUrls.length} hình ảnh]' : 'Hình ảnh',
+            type: MessageType.image,
+            mediaUrl: uploadedUrls.first,
+            mediaUrls: uploadedUrls,
+            mediaTypes: List.filled(uploadedUrls.length, 'image'),
+          );
+        }
+      }
+    } else if (action == AttachmentAction.video) {
+      final pfiles = await _storageService.pickMultiVideo(maxVideos: 10);
+      if (pfiles.isNotEmpty) {
+        setState(() => _isUploading = true);
+        final List<String> uploadedUrls = [];
+
+        for (var i = 0; i < pfiles.length; i++) {
+          final pf = pfiles[i];
+          final url = await _storageService.uploadFile(
+            path: pf.path ?? '',
+            fileName: pf.name,
+            folder: 'chat_videos/${widget.room.id}',
+            fileBytes: pf.bytes,
+          );
+          if (url != null && url.isNotEmpty) {
+            uploadedUrls.add(url);
+          }
+        }
+
+        setState(() => _isUploading = false);
+
+        if (uploadedUrls.isNotEmpty) {
+          await _chatService.sendMessage(
+            roomId: widget.room.id,
+            sender: currentUser,
+            content: uploadedUrls.length > 1 ? '[${uploadedUrls.length} video]' : 'Video',
             type: MessageType.video,
-            mediaUrl: url,
-            fileName: xfile.name,
+            mediaUrl: uploadedUrls.first,
+            mediaUrls: uploadedUrls,
+            mediaTypes: List.filled(uploadedUrls.length, 'video'),
           );
         }
       }

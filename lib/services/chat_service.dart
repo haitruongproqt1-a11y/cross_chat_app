@@ -231,6 +231,8 @@ class ChatService {
     required String content,
     MessageType type = MessageType.text,
     String? mediaUrl,
+    List<String> mediaUrls = const [],
+    List<String> mediaTypes = const [],
     String? fileName,
     int? fileSize,
     int? audioDurationSec,
@@ -254,7 +256,9 @@ class ChatService {
       type: type,
       timestamp: DateTime.now(),
       readBy: [sender.uid],
-      mediaUrl: mediaUrl,
+      mediaUrl: mediaUrl ?? (mediaUrls.isNotEmpty ? mediaUrls.first : null),
+      mediaUrls: mediaUrls,
+      mediaTypes: mediaTypes,
       fileName: fileName,
       fileSize: fileSize,
       audioDurationSec: audioDurationSec,
@@ -270,11 +274,19 @@ class ChatService {
 
     // Update Room's last message
     String previewText = content;
-    if (type == MessageType.image) previewText = '📷 [Hình ảnh]';
-    if (type == MessageType.video) previewText = '🎥 [Video]';
-    if (type == MessageType.audio) previewText = '🎤 [Tin nhắn thoại]';
-    if (type == MessageType.file) previewText = '📎 $fileName';
-    if (type == MessageType.location) previewText = '📍 [Vị trí ghim]';
+    if (mediaUrls.length > 1) {
+      previewText = '📷 [${mediaUrls.length} ảnh/video]';
+    } else if (type == MessageType.image) {
+      previewText = '📷 [Hình ảnh]';
+    } else if (type == MessageType.video) {
+      previewText = '🎥 [Video]';
+    } else if (type == MessageType.audio) {
+      previewText = '🎤 [Tin nhắn thoại]';
+    } else if (type == MessageType.file) {
+      previewText = '📎 $fileName';
+    } else if (type == MessageType.location) {
+      previewText = '📍 [Vị trí ghim]';
+    }
 
     await _firestore.collection('chat_rooms').doc(roomId).update({
       'lastMessage': previewText,
