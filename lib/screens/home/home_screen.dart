@@ -12,6 +12,7 @@ import '../nearby/nearby_friends_screen.dart';
 import '../wall/user_wall_screen.dart';
 import '../../services/call_sound_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/ota_update_service.dart';
 import 'chat_list_view.dart';
 import 'contacts_view.dart';
 import 'settings_view.dart';
@@ -46,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _listenForIncomingMessages();
+      // Tự động kiểm tra bản cập nhật nền khi khởi động
+      OtaUpdateService().checkUpdate(context, showNoUpdateDialog: false);
     });
   }
 

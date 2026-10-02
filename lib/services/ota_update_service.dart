@@ -280,6 +280,18 @@ class OtaUpdateService {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     } catch (_) {}
                   }
+                } else if (Platform.isWindows) {
+                  final result = await OpenFilex.open(file.path);
+                  if (result.type != ResultType.done) {
+                    try {
+                      await Process.run('explorer.exe', ['/select,', file.path]);
+                    } catch (_) {
+                      final uri = Uri.parse(downloadUrl);
+                      try {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {}
+                    }
+                  }
                 } else {
                   final uri = Uri.parse(downloadUrl);
                   try {

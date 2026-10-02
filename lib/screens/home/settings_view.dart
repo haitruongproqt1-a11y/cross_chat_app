@@ -6,6 +6,7 @@ import '../../widgets/avatar_widget.dart';
 import '../../widgets/security_question_picker_sheet.dart';
 import '../settings/profile_edit_screen.dart';
 import '../../services/ota_update_service.dart';
+import '../../utils/constants.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -469,7 +470,7 @@ class _SettingsViewState extends State<SettingsView> {
                 ListTile(
                   leading: const Icon(Icons.system_update, color: Color(0xFF10B981)),
                   title: const Text('Kiểm tra bản cập nhật KINI', style: TextStyle(fontSize: 14.5)),
-                  subtitle: const Text('Phiên bản v1.0.14', style: TextStyle(fontSize: 12)),
+                  subtitle: const Text('Phiên bản v${AppConstants.appVersion}', style: TextStyle(fontSize: 12)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     OtaUpdateService().checkUpdate(context, showNoUpdateDialog: true);
