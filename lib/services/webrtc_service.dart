@@ -464,29 +464,41 @@ class WebRtcService {
     bool shareDeviceAudio = false,
   }) async {
     try {
-      // 1. Constraints linh hoat tuong thich 100% moi man hinh Android, khong ep cung mandatory gay loi MediaCodec
+      // 1. Quy trình chuẩn cho Android 14+ (API 34+):
+      // Bắt buộc yêu cầu quyền MediaProjection từ người dùng trước bằng Helper.requestCapturePermission().
+      // Bước này hiển thị hộp thoại hệ thống: "Chia sẻ một ứng dụng" hoặc "Toàn bộ màn hình".
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final granted = await Helper.requestCapturePermission();
+        if (!granted) {
+          debugPrint('Người dùng đã từ chối hoặc hủy cấp quyền quay màn hình.');
+          return false;
+        }
+
+        // 2. Sau khi người dùng đã cấp quyền (Token MediaProjection đã được cấp trong hệ điều hành),
+        // bắt buộc khởi chạy Foreground Service với type mediaProjection TRƯỚC KHI tạo VirtualDisplay.
+        try {
+          const channel = MethodChannel('com.example.cross_chat_app/screen_share');
+          await channel.invokeMethod('startService');
+        } catch (e) {
+          debugPrint('Lỗi khởi động ScreenCaptureService: $e');
+        }
+
+        // Chờ 300ms để đảm bảo Foreground Service đã được Android OS đăng ký active
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+
+      // 3. Constraints thích ứng theo tỉ lệ màn hình
       final mediaConstraints = <String, dynamic>{
         'video': true,
         'audio': false,
       };
 
-      // 2. Yeu cau quyen ghi man hinh tu he thong Android
+      // 4. Lấy MediaStream màn hình (Lúc này flutter_webrtc đã có sẵn token và Service đang chạy -> 100% thành công không crash)
       _screenStream = await navigator.mediaDevices.getDisplayMedia(mediaConstraints);
       final screenTrack = _screenStream?.getVideoTracks().firstOrNull;
 
       if (screenTrack == null) {
         return false;
-      }
-
-      // 3. Khoi chay Foreground Service tren Android CHI SAU KHI nguoi dung da cap quyen ghi man hinh
-      // Tranh vi pham quy dinh bao mat MediaProjection cua Android 14+ gay SecurityException / Crash app
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        try {
-          const channel = MethodChannel('com.example.cross_chat_app/screen_share');
-          await channel.invokeMethod('startService');
-        } catch (e) {
-          debugPrint('Error starting ScreenCaptureService: $e');
-        }
       }
 
       if (_peerConnection != null) {

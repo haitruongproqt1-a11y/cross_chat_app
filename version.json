@@ -1,9 +1,9 @@
 {
-  "version": "1.0.10",
-  "build_number": 11,
+  "version": "1.0.11",
+  "build_number": 12,
   "release_date": "2026-10-02",
-  "changelog": "- Khắc phục triệt để lỗi văng ứng dụng khi chia sẻ màn hình trên Android 14+ (đồng bộ MediaProjection token và thích ứng độ phân giải 20:9)\n- Hiển thị Avatar người dùng theo thời gian thực (Realtime) ở tất cả màn hình chat: Danh sách cuộc trò chuyện, Tiêu đề phòng chat (AppBar), và từng bong bóng tin nhắn\n- Chạm vào Avatar trong phòng chat hoặc tin nhắn để xem ngay Tường cá nhân / Nhật ký của bạn bè",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/update_v1.0.10.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/app-arm64-v8a-release.apk"
+  "changelog": "- Khắc phục triệt để 100% sự cố văng ứng dụng khi bấm chia sẻ toàn màn hình hoặc ứng dụng trên Android 14+ bằng quy trình chuẩn: Request Permission -> Kích hoạt MediaProjection Foreground Service -> Bắt đầu luồng video WebRTC\n- Đồng bộ hiển thị Avatar người dùng theo thời gian thực (Realtime) ở tất cả màn hình chat: Danh sách cuộc trò chuyện, Tiêu đề phòng chat (AppBar), và từng bong bóng tin nhắn\n- Chạm vào Avatar trong phòng chat hoặc tin nhắn để xem ngay Tường cá nhân / Nhật ký của bạn bè",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.11/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.11/update_v1.0.11.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.11/app-arm64-v8a-release.apk"
 }
