@@ -44,7 +44,7 @@ class WallService {
     await _firestore.collection('posts').doc(postId).delete();
   }
 
-  // Thích hoặc bỏ thích bài đăng
+  // Thích hoặc bỏ thích bài đăng (mặc định thả tim ❤️)
   Future<void> toggleLike({required String postId, required String userId}) async {
     final postRef = _firestore.collection('posts').doc(postId);
     final doc = await postRef.get();
@@ -52,12 +52,44 @@ class WallService {
 
     final data = doc.data();
     final likes = List<String>.from(data?['likes'] ?? []);
-    if (likes.contains(userId)) {
+    final reactions = Map<String, dynamic>.from(data?['reactions'] ?? {});
+
+    if (likes.contains(userId) || reactions.containsKey(userId)) {
       likes.remove(userId);
+      reactions.remove(userId);
     } else {
       likes.add(userId);
+      reactions[userId] = '❤️';
     }
-    await postRef.update({'likes': likes});
+    await postRef.update({
+      'likes': likes,
+      'reactions': reactions,
+    });
+  }
+
+  // Thả / đổi biểu cảm vào bài đăng (❤️, 👍, 😂, 😮, 😢, 😡)
+  Future<void> addReaction({
+    required String postId,
+    required String userId,
+    required String emoji,
+  }) async {
+    final postRef = _firestore.collection('posts').doc(postId);
+    await postRef.update({
+      'likes': FieldValue.arrayUnion([userId]),
+      'reactions.$userId': emoji,
+    });
+  }
+
+  // Gỡ biểu cảm khỏi bài đăng
+  Future<void> removeReaction({
+    required String postId,
+    required String userId,
+  }) async {
+    final postRef = _firestore.collection('posts').doc(postId);
+    await postRef.update({
+      'likes': FieldValue.arrayRemove([userId]),
+      'reactions.$userId': FieldValue.delete(),
+    });
   }
 
   // Thêm bình luận

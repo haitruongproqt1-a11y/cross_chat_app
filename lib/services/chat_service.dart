@@ -94,6 +94,10 @@ class ChatService {
               latitude: msg.latitude,
               longitude: msg.longitude,
               locationAddress: msg.locationAddress,
+              reactions: msg.reactions,
+              replyToMessageId: msg.replyToMessageId,
+              replyToContent: msg.replyToContent,
+              replyToSenderName: msg.replyToSenderName,
             );
           })
           .whereType<MessageModel>()
@@ -233,6 +237,9 @@ class ChatService {
     double? latitude,
     double? longitude,
     String? locationAddress,
+    String? replyToMessageId,
+    String? replyToContent,
+    String? replyToSenderName,
   }) async {
     final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
 
@@ -254,6 +261,9 @@ class ChatService {
       latitude: latitude,
       longitude: longitude,
       locationAddress: locationAddress,
+      replyToMessageId: replyToMessageId,
+      replyToContent: replyToContent,
+      replyToSenderName: replyToSenderName,
     );
 
     await msgRef.set(message.toMap());
@@ -271,6 +281,62 @@ class ChatService {
       'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
       'lastMessageSenderId': sender.uid,
       'lastMessageSenderName': sender.displayName,
+    });
+  }
+
+  // Thả / Thay đổi biểu cảm vào tin nhắn
+  Future<void> addMessageReaction({
+    required String roomId,
+    required String messageId,
+    required String userId,
+    required String emoji,
+  }) async {
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'reactions.$userId': emoji,
+    });
+  }
+
+  // Gỡ biểu cảm khỏi tin nhắn
+  Future<void> removeMessageReaction({
+    required String roomId,
+    required String messageId,
+    required String userId,
+  }) async {
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'reactions.$userId': FieldValue.delete(),
+    });
+  }
+
+  // Ghim tin nhắn trong phòng chat
+  Future<void> pinMessage({
+    required String roomId,
+    required String messageId,
+    required String text,
+    required String senderName,
+  }) async {
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'pinnedMessageId': messageId,
+      'pinnedMessageText': text,
+      'pinnedMessageSenderName': senderName,
+    });
+  }
+
+  // Gỡ ghim tin nhắn
+  Future<void> unpinMessage(String roomId) async {
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'pinnedMessageId': FieldValue.delete(),
+      'pinnedMessageText': FieldValue.delete(),
+      'pinnedMessageSenderName': FieldValue.delete(),
     });
   }
 

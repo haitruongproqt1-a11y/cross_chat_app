@@ -13,16 +13,24 @@ class MessageBubble extends StatefulWidget {
   final MessageModel message;
   final bool isMe;
   final String roomId;
+  final String currentUserId;
   final VoidCallback? onRecall;
   final VoidCallback? onDelete;
+  final VoidCallback? onReply;
+  final VoidCallback? onPin;
+  final Function(String emoji)? onReact;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.isMe,
     required this.roomId,
+    required this.currentUserId,
     this.onRecall,
     this.onDelete,
+    this.onReply,
+    this.onPin,
+    this.onReact,
   });
 
   @override
@@ -55,15 +63,74 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   void _showContextMenu(BuildContext context) {
     final msg = widget.message;
+    const emojis = ['❤️', '👍', '😂', '😮', '😢', '😡'];
+    final myReaction = msg.reactions[widget.currentUserId];
+
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Wrap(
           children: [
+            // Thanh thả cảm xúc Zalo
+            if (!msg.isRecalled)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: emojis.map((emoji) {
+                    final isSelected = myReaction == emoji;
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        widget.onReact?.call(emoji);
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue.withAlpha(40) : Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: isSelected ? Border.all(color: Colors.blueAccent, width: 2) : null,
+                        ),
+                        child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            const Divider(height: 1),
+
+            // Trả lời tin nhắn
+            if (!msg.isRecalled)
+              ListTile(
+                leading: const Icon(Icons.reply_rounded, color: Colors.blueAccent),
+                title: const Text('Trả lời tin nhắn'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onReply?.call();
+                },
+              ),
+
+            // Ghim tin nhắn
+            if (!msg.isRecalled)
+              ListTile(
+                leading: const Icon(Icons.push_pin_outlined, color: Colors.orange),
+                title: const Text('Ghim tin nhắn'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onPin?.call();
+                },
+              ),
+
+            // Sao chép nội dung
             if (!msg.isRecalled && (msg.type == MessageType.text || msg.content.isNotEmpty))
               ListTile(
-                leading: const Icon(Icons.copy, color: Colors.blueAccent),
+                leading: const Icon(Icons.copy, color: Colors.teal),
                 title: const Text('Sao chép nội dung'),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: msg.content));
@@ -73,15 +140,19 @@ class _MessageBubbleState extends State<MessageBubble> {
                   );
                 },
               ),
+
+            // Thu hồi tin nhắn
             if (widget.isMe && !msg.isRecalled)
               ListTile(
-                leading: const Icon(Icons.undo, color: Colors.orange),
+                leading: const Icon(Icons.undo, color: Colors.deepOrange),
                 title: const Text('Thu hồi tin nhắn'),
                 onTap: () {
                   Navigator.pop(ctx);
                   widget.onRecall?.call();
                 },
               ),
+
+            // Xóa ở phía tôi
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
               title: const Text('Xóa tin nhắn ở phía tôi'),
@@ -101,6 +172,9 @@ class _MessageBubbleState extends State<MessageBubble> {
     final theme = Theme.of(context);
     final isMe = widget.isMe;
     final isRecalled = widget.message.isRecalled;
+    final msg = widget.message;
+
+    final uniqueEmojis = msg.reactions.values.toSet().toList();
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -110,69 +184,168 @@ class _MessageBubbleState extends State<MessageBubble> {
         ),
         child: GestureDetector(
           onLongPress: () => _showContextMenu(context),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isRecalled
-                  ? Colors.grey.withAlpha(50)
-                  : (isMe ? theme.colorScheme.primary : theme.cardTheme.color),
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(16),
-                topRight: const Radius.circular(16),
-                bottomLeft: Radius.circular(isMe ? 16 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 16),
-              ),
-              border: isRecalled ? Border.all(color: Colors.grey.shade400, width: 0.5) : null,
-              boxShadow: isRecalled
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+          onDoubleTap: !isRecalled ? () => widget.onReact?.call('❤️') : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                margin: EdgeInsets.only(
+                  left: 12,
+                  right: 12,
+                  top: 4,
+                  bottom: msg.reactions.isNotEmpty ? 14 : 4,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isRecalled
+                      ? Colors.grey.withAlpha(50)
+                      : (isMe ? theme.colorScheme.primary : theme.cardTheme.color),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(isMe ? 16 : 4),
+                    bottomRight: Radius.circular(isMe ? 4 : 16),
+                  ),
+                  border: isRecalled ? Border.all(color: Colors.grey.shade400, width: 0.5) : null,
+                  boxShadow: isRecalled
+                      ? []
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(10),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Column(
+                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    if (!isMe)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          msg.senderName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isRecalled ? Colors.grey : theme.colorScheme.primary,
+                          ),
+                        ),
                       ),
-                    ],
-            ),
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      widget.message.senderName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isRecalled ? Colors.grey : theme.colorScheme.primary,
+
+                    // Trích dẫn tin nhắn trả lời (Reply quote)
+                    if (msg.replyToContent != null && msg.replyToContent!.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isMe ? Colors.white.withAlpha(35) : Colors.black.withAlpha(12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border(
+                            left: BorderSide(
+                              color: isMe ? Colors.white : theme.colorScheme.primary,
+                              width: 3,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              msg.replyToSenderName ?? 'Người dùng',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isMe ? Colors.white : theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              msg.replyToContent!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isMe ? Colors.white70 : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    _buildMessageContent(context),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppConstants.formatTimestamp(msg.timestamp),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isMe ? Colors.white70 : Colors.grey,
+                          ),
+                        ),
+                        if (isMe && !isRecalled) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            msg.isRead ? Icons.done_all : Icons.done,
+                            size: 14,
+                            color: msg.isRead ? Colors.cyanAccent : Colors.white70,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            msg.isRead ? 'Đã xem' : 'Đã gửi',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: msg.isRead ? Colors.cyanAccent : Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Chip hiển thị cảm xúc (Reactions badge)
+              if (msg.reactions.isNotEmpty)
+                Positioned(
+                  bottom: 0,
+                  right: isMe ? 18 : null,
+                  left: isMe ? null : 18,
+                  child: GestureDetector(
+                    onTap: () => _showContextMenu(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.cardTheme.color ?? Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withAlpha(60), width: 0.8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(20),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(uniqueEmojis.take(3).join(''), style: const TextStyle(fontSize: 12)),
+                          if (msg.reactions.length > 1) ...[
+                            const SizedBox(width: 3),
+                            Text(
+                              '${msg.reactions.length}',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
-                _buildMessageContent(context),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppConstants.formatTimestamp(widget.message.timestamp),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe ? Colors.white70 : Colors.grey,
-                      ),
-                    ),
-                    if (isMe && !isRecalled) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        widget.message.isRead ? Icons.done_all : Icons.done,
-                        size: 14,
-                        color: widget.message.isRead ? Colors.cyanAccent : Colors.white70,
-                      ),
-                    ],
-                  ],
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

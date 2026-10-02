@@ -16,6 +16,9 @@ class ChatRoomModel {
   final int unreadCount;
   final String? createdBy;
   final DateTime createdAt;
+  final String? pinnedMessageId;
+  final String? pinnedMessageText;
+  final String? pinnedMessageSenderName;
 
   ChatRoomModel({
     required this.id,
@@ -30,6 +33,9 @@ class ChatRoomModel {
     this.unreadCount = 0,
     this.createdBy,
     required this.createdAt,
+    this.pinnedMessageId,
+    this.pinnedMessageText,
+    this.pinnedMessageSenderName,
   });
 
   Map<String, dynamic> toMap() {
@@ -46,6 +52,9 @@ class ChatRoomModel {
       'unreadCount': unreadCount,
       'createdBy': createdBy,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'pinnedMessageId': pinnedMessageId,
+      'pinnedMessageText': pinnedMessageText,
+      'pinnedMessageSenderName': pinnedMessageSenderName,
     };
   }
 
@@ -83,6 +92,9 @@ class ChatRoomModel {
       unreadCount: map['unreadCount'] ?? 0,
       createdBy: map['createdBy'],
       createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
+      pinnedMessageId: map['pinnedMessageId'],
+      pinnedMessageText: map['pinnedMessageText'],
+      pinnedMessageSenderName: map['pinnedMessageSenderName'],
     );
   }
 }

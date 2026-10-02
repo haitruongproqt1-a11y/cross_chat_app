@@ -22,6 +22,7 @@ class PostModel {
   final PostPrivacy privacy;
   final List<String> blockedUserIds;
   final List<String> likes;
+  final Map<String, String> reactions; // userId -> emoji
   final int commentsCount;
   final DateTime createdAt;
 
@@ -36,6 +37,7 @@ class PostModel {
     this.privacy = PostPrivacy.public,
     this.blockedUserIds = const [],
     this.likes = const [],
+    this.reactions = const {},
     this.commentsCount = 0,
     required this.createdAt,
   });
@@ -52,6 +54,7 @@ class PostModel {
       'privacy': privacy.name,
       'blockedUserIds': blockedUserIds,
       'likes': likes,
+      'reactions': reactions,
       'commentsCount': commentsCount,
       'createdAt': createdAt.millisecondsSinceEpoch,
     };
@@ -75,6 +78,7 @@ class PostModel {
       ),
       blockedUserIds: List<String>.from(map['blockedUserIds'] ?? []),
       likes: List<String>.from(map['likes'] ?? []),
+      reactions: Map<String, String>.from(map['reactions'] ?? {}),
       commentsCount: map['commentsCount'] is int ? map['commentsCount'] : 0,
       createdAt: () {
         final val = map['createdAt'];

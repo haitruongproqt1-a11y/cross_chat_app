@@ -30,6 +30,12 @@ class MessageModel {
   final double? longitude;
   final String? locationAddress;
 
+  // Zalo-like features: Reactions & Reply
+  final Map<String, String> reactions; // userId -> emoji ('❤️', '👍', '😂', '😮', '😢', '😡')
+  final String? replyToMessageId;
+  final String? replyToContent;
+  final String? replyToSenderName;
+
   MessageModel({
     required this.id,
     required this.senderId,
@@ -49,6 +55,10 @@ class MessageModel {
     this.latitude,
     this.longitude,
     this.locationAddress,
+    this.reactions = const {},
+    this.replyToMessageId,
+    this.replyToContent,
+    this.replyToSenderName,
   });
 
   Map<String, dynamic> toMap() {
@@ -71,6 +81,10 @@ class MessageModel {
       'latitude': latitude,
       'longitude': longitude,
       'locationAddress': locationAddress,
+      'reactions': reactions,
+      'replyToMessageId': replyToMessageId,
+      'replyToContent': replyToContent,
+      'replyToSenderName': replyToSenderName,
     };
   }
 
@@ -99,6 +113,10 @@ class MessageModel {
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       locationAddress: map['locationAddress'],
+      reactions: Map<String, String>.from(map['reactions'] ?? {}),
+      replyToMessageId: map['replyToMessageId'],
+      replyToContent: map['replyToContent'],
+      replyToSenderName: map['replyToSenderName'],
     );
   }
 }

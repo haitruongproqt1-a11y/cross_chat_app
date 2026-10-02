@@ -31,6 +31,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final StorageService _storageService = StorageService();
   final LocationService _locationService = LocationService();
   bool _isUploading = false;
+  MessageModel? _replyingToMessage;
 
   @override
   void initState() {
@@ -55,6 +56,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
     if (currentUser == null) return;
 
+    final replyMsg = _replyingToMessage;
+    setState(() {
+      _replyingToMessage = null;
+    });
+
     _textController.clear();
 
     await _chatService.sendMessage(
@@ -62,7 +68,52 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       sender: currentUser,
       content: text,
       type: MessageType.text,
+      replyToMessageId: replyMsg?.id,
+      replyToContent: replyMsg != null ? (replyMsg.content.isNotEmpty ? replyMsg.content : '[Tệp/Phương tiện]') : null,
+      replyToSenderName: replyMsg?.senderName,
     );
+  }
+
+  Future<void> _handleReaction(MessageModel msg, String emoji) async {
+    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    if (currentUser == null) return;
+
+    if (msg.reactions[currentUser.uid] == emoji) {
+      await _chatService.removeMessageReaction(
+        roomId: widget.room.id,
+        messageId: msg.id,
+        userId: currentUser.uid,
+      );
+    } else {
+      await _chatService.addMessageReaction(
+        roomId: widget.room.id,
+        messageId: msg.id,
+        userId: currentUser.uid,
+        emoji: emoji,
+      );
+    }
+  }
+
+  Future<void> _handlePin(MessageModel msg) async {
+    String preview = msg.content;
+    if (msg.type == MessageType.image) preview = '📷 [Hình ảnh]';
+    if (msg.type == MessageType.video) preview = '🎥 [Video]';
+    if (msg.type == MessageType.audio) preview = '🎤 [Tin nhắn thoại]';
+    if (msg.type == MessageType.file) preview = '📎 ${msg.fileName ?? "Tệp tin"}';
+    if (msg.type == MessageType.location) preview = '📍 [Vị trí ghim]';
+
+    await _chatService.pinMessage(
+      roomId: widget.room.id,
+      messageId: msg.id,
+      text: preview,
+      senderName: msg.senderName,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã ghim tin nhắn lên đầu cuộc trò chuyện')),
+      );
+    }
   }
 
   void _handleAttachmentAction(AttachmentAction action) async {
@@ -234,30 +285,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;
     final theme = Theme.of(context);
     final isDirect = widget.room.type == ChatRoomType.direct;
-    final otherUserId = isDirect
-        ? widget.room.memberIds.firstWhere((id) => id != currentUser?.uid, orElse: () => '')
-        : '';
-    final roomDisplayName = widget.room.getDisplayName(currentUser?.uid ?? '');
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: currentUser != null
-          ? FirebaseFirestore.instance.collection('users').doc(currentUser.uid).snapshots()
-          : null,
-      builder: (context, mySnapshot) {
-        final myData = mySnapshot.data?.data() as Map<String, dynamic>?;
-        final myFriends = List<String>.from(myData?['friends'] ?? []);
-        final myBlocked = List<String>.from(myData?['blockedUsers'] ?? []);
-        final isFriend = myFriends.contains(otherUserId);
-        final isBlockedByMe = myBlocked.contains(otherUserId);
+      stream: FirebaseFirestore.instance.collection('chat_rooms').doc(widget.room.id).snapshots(),
+      builder: (context, roomSnap) {
+        final roomData = roomSnap.data?.data() as Map<String, dynamic>?;
+        final currentRoom = roomData != null ? ChatRoomModel.fromMap(roomData, widget.room.id) : widget.room;
+        final otherUserId = isDirect
+            ? currentRoom.memberIds.firstWhere((id) => id != currentUser?.uid, orElse: () => '')
+            : '';
+        final roomDisplayName = currentRoom.getDisplayName(currentUser?.uid ?? '');
 
-        return Scaffold(
-          appBar: AppBar(
-            titleSpacing: 0,
-            title: Row(
-              children: [
-                AvatarWidget(
-                  photoUrl: widget.room.photoUrl,
-                  name: roomDisplayName,
+        return StreamBuilder<DocumentSnapshot>(
+          stream: currentUser != null
+              ? FirebaseFirestore.instance.collection('users').doc(currentUser.uid).snapshots()
+              : null,
+          builder: (context, mySnapshot) {
+            final myData = mySnapshot.data?.data() as Map<String, dynamic>?;
+            final myFriends = List<String>.from(myData?['friends'] ?? []);
+            final myBlocked = List<String>.from(myData?['blockedUsers'] ?? []);
+            final isFriend = myFriends.contains(otherUserId);
+            final isBlockedByMe = myBlocked.contains(otherUserId);
+
+            return Scaffold(
+              appBar: AppBar(
+                titleSpacing: 0,
+                title: Row(
+                  children: [
+                    AvatarWidget(
+                      photoUrl: currentRoom.photoUrl,
+                      name: roomDisplayName,
                   radius: 18,
                 ),
                 const SizedBox(width: 10),
@@ -397,6 +454,46 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               if (_isUploading)
                 const LinearProgressIndicator(minHeight: 3),
 
+              // Thanh ghim tin nhắn Zalo
+              if (currentRoom.pinnedMessageText != null && currentRoom.pinnedMessageText!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withAlpha(35),
+                    border: Border(bottom: BorderSide(color: Colors.amber.withAlpha(80), width: 1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.push_pin, size: 18, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tin nhắn đã ghim ${currentRoom.pinnedMessageSenderName != null ? '(${currentRoom.pinnedMessageSenderName})' : ''}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange),
+                            ),
+                            Text(
+                              currentRoom.pinnedMessageText!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        tooltip: 'Gỡ ghim',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _chatService.unpinMessage(widget.room.id),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Banner kết bạn nếu chưa có trong danh bạ
               if (isDirect && otherUserId.isNotEmpty && !isFriend && currentUser != null)
                 Container(
@@ -472,6 +569,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           message: msg,
                           isMe: isMe,
                           roomId: widget.room.id,
+                          currentUserId: currentUser?.uid ?? '',
+                          onReply: () {
+                            setState(() {
+                              _replyingToMessage = msg;
+                            });
+                          },
+                          onPin: () => _handlePin(msg),
+                          onReact: (emoji) => _handleReaction(msg, emoji),
                           onRecall: () async {
                             await _chatService.recallMessage(widget.room.id, msg.id);
                           },
@@ -484,6 +589,60 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   },
                 ),
               ),
+
+              // Thanh xem trước trả lời tin nhắn (Reply preview bar)
+              if (_replyingToMessage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    border: Border(top: BorderSide(color: theme.dividerColor, width: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        margin: const EdgeInsets.only(right: 10),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Đang trả lời ${_replyingToMessage!.senderName}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _replyingToMessage!.content.isNotEmpty ? _replyingToMessage!.content : '[Tệp/Phương tiện]',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        tooltip: 'Hủy trả lời',
+                        onPressed: () {
+                          setState(() {
+                            _replyingToMessage = null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
 
               // Khung nhập tin nhắn hoặc Thông báo chặn
               if (isBlockedByMe)
@@ -586,5 +745,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
       },
     );
+  },
+);
   }
 }

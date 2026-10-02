@@ -185,9 +185,59 @@ class PostCardWidget extends StatelessWidget {
     );
   }
 
+  void _showReactionPicker(BuildContext context) {
+    final wallService = WallService();
+    const emojis = ['❤️', '👍', '😂', '😮', '😢', '😡'];
+    final userReaction = post.reactions[currentUser.uid] ?? (post.likes.contains(currentUser.uid) ? '❤️' : null);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Bày tỏ cảm xúc', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: emojis.map((emoji) {
+                  final isSelected = userReaction == emoji;
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      if (isSelected) {
+                        wallService.removeReaction(postId: post.id, userId: currentUser.uid);
+                      } else {
+                        wallService.addReaction(postId: post.id, userId: currentUser.uid, emoji: emoji);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.blue.withAlpha(40) : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: isSelected ? Border.all(color: Colors.blueAccent, width: 2) : null,
+                      ),
+                      child: Text(emoji, style: const TextStyle(fontSize: 32)),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isLiked = post.likes.contains(currentUser.uid);
+    final userReaction = post.reactions[currentUser.uid] ?? (post.likes.contains(currentUser.uid) ? '❤️' : null);
+    final hasReacted = userReaction != null;
     final isAuthor = post.authorId == currentUser.uid;
     final wallService = WallService();
 
@@ -355,23 +405,69 @@ class PostCardWidget extends StatelessWidget {
                 ),
             ],
 
-            const SizedBox(height: 12),
+            // Thống kê cảm xúc & bình luận trước dòng kẻ
+            Builder(
+              builder: (context) {
+                final allEmojis = <String>{};
+                for (var e in post.reactions.values) {
+                  allEmojis.add(e);
+                }
+                if (allEmojis.isEmpty && post.likes.isNotEmpty) {
+                  allEmojis.add('❤️');
+                }
+                final totalReactions = post.likes.length > post.reactions.length ? post.likes.length : post.reactions.length;
+
+                if (totalReactions == 0 && post.commentsCount == 0) return const SizedBox.shrink();
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (totalReactions > 0)
+                        Row(
+                          children: [
+                            Text(allEmojis.take(3).join(''), style: const TextStyle(fontSize: 14)),
+                            const SizedBox(width: 4),
+                            Text('$totalReactions', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      if (post.commentsCount > 0)
+                        Text('${post.commentsCount} bình luận', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                );
+              },
+            ),
+
             const Divider(height: 1),
 
-            // Actions: Like, Comment
+            // Actions: Like/Reaction, Comment
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                TextButton.icon(
-                  onPressed: () => wallService.toggleLike(postId: post.id, userId: currentUser.uid),
-                  icon: Icon(
-                    isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: isLiked ? Colors.red : Colors.grey,
-                    size: 20,
-                  ),
-                  label: Text(
-                    post.likes.isEmpty ? 'Thích' : '${post.likes.length}',
-                    style: TextStyle(color: isLiked ? Colors.red : Colors.grey, fontWeight: FontWeight.bold),
+                GestureDetector(
+                  onLongPress: () => _showReactionPicker(context),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      if (hasReacted) {
+                        wallService.removeReaction(postId: post.id, userId: currentUser.uid);
+                      } else {
+                        wallService.addReaction(postId: post.id, userId: currentUser.uid, emoji: '❤️');
+                      }
+                    },
+                    icon: hasReacted
+                        ? Text(userReaction, style: const TextStyle(fontSize: 18))
+                        : const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
+                    label: Text(
+                      hasReacted ? 'Đã thích' : 'Thích',
+                      style: TextStyle(
+                        color: hasReacted ? Colors.redAccent : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 TextButton.icon(
