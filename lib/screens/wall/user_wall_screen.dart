@@ -7,6 +7,7 @@ import '../../services/wall_service.dart';
 import '../../widgets/avatar_widget.dart';
 import '../../widgets/post_card_widget.dart';
 import 'create_post_screen.dart';
+import '../tiktok/tiktok_viewer_screen.dart';
 
 class UserWallScreen extends StatelessWidget {
   final UserModel? targetUser; // null = Bảng tin chung (Feed), khác null = Tường nhà của user đó
@@ -46,6 +47,27 @@ class UserWallScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x5500F2FE), offset: Offset(-1, -1), blurRadius: 3),
+                  BoxShadow(color: Color(0x55FE0979), offset: Offset(1, 1), blurRadius: 3),
+                ],
+              ),
+              child: const Icon(Icons.music_note, color: Colors.white, size: 16),
+            ),
+            tooltip: 'Lướt TikTok & LIVE',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TikTokViewerScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.post_add, size: 26),
             tooltip: 'Đăng bài viết mới',

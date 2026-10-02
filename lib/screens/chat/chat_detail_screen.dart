@@ -15,6 +15,7 @@ import '../../widgets/avatar_widget.dart';
 import '../../models/user_model.dart';
 import '../wall/user_wall_screen.dart';
 import '../call/call_screen.dart';
+import '../tiktok/tiktok_viewer_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -258,7 +259,30 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           );
         }
       }
+    } else if (action == AttachmentAction.tiktok) {
+      _openTikTok();
     }
+  }
+
+  void _openTikTok() {
+    final currentUser = Provider.of<AuthProvider>(context, listen: false).currentUser;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TikTokViewerScreen(
+          onShareToChat: (link) async {
+            if (currentUser != null && link.isNotEmpty) {
+              await _chatService.sendMessage(
+                roomId: widget.room.id,
+                sender: currentUser,
+                content: link,
+                type: MessageType.text,
+              );
+            }
+          },
+        ),
+      ),
+    );
   }
 
   void _startCall(CallType type) async {
@@ -415,6 +439,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ],
             ),
             actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFE0979).withAlpha(150), width: 1),
+                  ),
+                  child: const Icon(Icons.music_note, color: Color(0xFF00F2FE), size: 16),
+                ),
+                tooltip: 'Lướt TikTok & LIVE',
+                onPressed: _openTikTok,
+              ),
               IconButton(
                 icon: const Icon(Icons.call_outlined),
                 tooltip: 'Gọi thoại',

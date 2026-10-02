@@ -9,6 +9,7 @@ import 'zalo_media_grid.dart';
 import 'avatar_widget.dart';
 import '../models/user_model.dart';
 import '../screens/wall/user_wall_screen.dart';
+import '../screens/tiktok/tiktok_viewer_screen.dart';
 
 class MessageBubble extends StatefulWidget {
   final MessageModel message;
@@ -598,9 +599,18 @@ class _MessageBubbleState extends State<MessageBubble> {
         alignment: PlaceholderAlignment.middle,
         child: GestureDetector(
           onTap: () async {
-            final uri = Uri.parse(url);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (url.toLowerCase().contains('tiktok.com')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TikTokViewerScreen(initialUrl: url),
+                ),
+              );
+            } else {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
             }
           },
           child: Text(

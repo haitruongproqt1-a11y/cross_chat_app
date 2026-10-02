@@ -1,9 +1,9 @@
 {
-  "version": "1.0.16",
-  "build_number": 17,
+  "version": "1.0.17",
+  "build_number": 18,
   "release_date": "2026-10-03",
-  "changelog": "- Gửi đa ảnh và đa video giống hệt Zalo: Cho phép chọn và gửi tới 10 ảnh hoặc 10 video cùng lúc trong 1 tin nhắn\n- Bố cục lưới thông minh chuẩn Zalo: Tự động sắp xếp 1-10 ảnh/video thành layout lưới đẹp mắt (2-2-3-3 cho 10 file), huy hiệu HD sắc nét và huy hiệu thời lượng video (HD | 00:xx) kèm nút Play\n- Trình xem thư viện ảnh/video toàn màn hình: Vuốt mượt mà chuyển ảnh/video, zoom phóng to thu nhỏ ảnh, xem trực tiếp video có thanh tiến trình và nút Play/Pause\n- Đổi tên Tab 4 thành 'Tường': Thay thế 'Trợ lý AI' thành 'Tường' với biểu tượng bảng tin nhật ký theo đúng yêu cầu\n- Bảo tồn 100% các tính năng gọi thoại, gọi video, chia sẻ màn hình âm thanh và tìm quanh đây",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/update_v1.0.16.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.16/app-arm64-v8a-release.apk"
+  "changelog": "- Tích hợp trình xem video TikTok & LIVE nhúng ngay trong app: Lướt video For You, Khám phá thịnh hành, xem Livestream trực tiếp, thả tim và bình luận không cần thoát KINI CHAT\n- Nút lối tắt TikTok tiện lợi: Truy cập nhanh từ thanh công cụ đoạn chat, menu đính kèm '+', bảng tin Tường và danh sách Tin nhắn\n- Chia sẻ liên kết TikTok nhanh vào cuộc trò chuyện chỉ với 1 chạm\n- Tự động mở link TikTok trong ứng dụng: Nhấp vào liên kết TikTok trong tin nhắn sẽ phát trực tiếp trong trình xem nhúng\n- Bảo tồn 100% các tính năng gửi ảnh/video chuẩn lưới Zalo (1-10 file), gọi thoại, gọi video, chia sẻ màn hình âm thanh và tìm quanh đây",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.17/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.17/update_v1.0.17.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.17/app-arm64-v8a-release.apk"
 }

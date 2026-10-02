@@ -6,6 +6,7 @@ enum AttachmentAction {
   video,
   document,
   location,
+  tiktok,
 }
 
 class MediaAttachmentSheet extends StatelessWidget {
@@ -61,6 +62,13 @@ class MediaAttachmentSheet extends StatelessWidget {
               color: Colors.green,
               label: 'Vị trí GPS',
               action: AttachmentAction.location,
+            ),
+            _buildActionItem(
+              context,
+              icon: Icons.music_note,
+              color: const Color(0xFFFE0979),
+              label: 'Lướt TikTok',
+              action: AttachmentAction.tiktok,
             ),
           ],
         ),

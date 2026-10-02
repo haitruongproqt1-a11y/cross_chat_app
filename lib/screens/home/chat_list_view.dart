@@ -8,6 +8,7 @@ import '../../widgets/avatar_widget.dart';
 import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../chat/create_group_screen.dart';
+import '../tiktok/tiktok_viewer_screen.dart';
 
 class ChatListView extends StatefulWidget {
   final Function(ChatRoomModel)? onRoomSelected;
@@ -55,6 +56,27 @@ class _ChatListViewState extends State<ChatListView> {
       appBar: AppBar(
         title: const Text('Tin Nhắn', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x5500F2FE), offset: Offset(-1, -1), blurRadius: 3),
+                  BoxShadow(color: Color(0x55FE0979), offset: Offset(1, 1), blurRadius: 3),
+                ],
+              ),
+              child: const Icon(Icons.music_note, color: Colors.white, size: 16),
+            ),
+            tooltip: 'Lướt TikTok & LIVE',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TikTokViewerScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.group_add_outlined),
             tooltip: 'Tạo Nhóm Mới',
