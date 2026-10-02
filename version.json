@@ -1,9 +1,9 @@
 {
-  "version": "1.0.13",
-  "build_number": 14,
+  "version": "1.0.14",
+  "build_number": 15,
   "release_date": "2026-10-02",
-  "changelog": "- Khắc phục triệt để 100% tiếng rè loa (Audio Clipping) và tiếng vang vọng (Echo): Tắt phần mềm AGC chồng chéo, kích hoạt bộ lọc triệt tiêu tiếng vang phần cứng Android voiceCall kết hợp High-pass filter loại bỏ rung cơ học loa-mic\n- Truyền tải âm thanh thiết bị khi chia sẻ màn hình: Tích hợp chế độ phát âm thanh nền song song (gainTransientMayDuck), giữ micro chạy ngầm để phát rõ tiếng nói cùng âm thanh video TikTok, YouTube, nghe nhạc sang máy người xem\n- Tối ưu hóa Opus Mono 48kbps Fullband với In-band FEC, loại bỏ hoàn toàn hiện tượng méo tiếng và vỡ âm",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/update_v1.0.13.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/app-arm64-v8a-release.apk"
+  "changelog": "- Nâng cấp giao diện hiện đại phong cách Tailwind / Material 3: Bảng màu tươi sáng (Xanh dương Sky Blue, Xanh Mint tươi mát, Vàng nhạt điểm nhấn, Trắng sáng thanh lịch)\n- Tối ưu hóa thị giác: Bo góc mềm mại 16px, đổ bóng mịn nhẹ nhàng, nâng cao độ tương phản và thẩm mỹ toàn diện\n- Bảo tồn 100% các tính năng gọi thoại, gọi video, chia sẻ màn hình và truyền âm thanh chất lượng cao",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.14/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.14/update_v1.0.14.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.14/app-arm64-v8a-release.apk"
 }
