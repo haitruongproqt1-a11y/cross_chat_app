@@ -19,6 +19,9 @@ class ChatRoomModel {
   final String? pinnedMessageId;
   final String? pinnedMessageText;
   final String? pinnedMessageSenderName;
+  final String? bubbleThemeId;
+  final String? wallpaperType;
+  final String? wallpaperValue;
 
   ChatRoomModel({
     required this.id,
@@ -36,6 +39,9 @@ class ChatRoomModel {
     this.pinnedMessageId,
     this.pinnedMessageText,
     this.pinnedMessageSenderName,
+    this.bubbleThemeId,
+    this.wallpaperType,
+    this.wallpaperValue,
   });
 
   Map<String, dynamic> toMap() {
@@ -55,6 +61,9 @@ class ChatRoomModel {
       'pinnedMessageId': pinnedMessageId,
       'pinnedMessageText': pinnedMessageText,
       'pinnedMessageSenderName': pinnedMessageSenderName,
+      'bubbleThemeId': bubbleThemeId,
+      'wallpaperType': wallpaperType,
+      'wallpaperValue': wallpaperValue,
     };
   }
 
@@ -95,6 +104,9 @@ class ChatRoomModel {
       pinnedMessageId: map['pinnedMessageId'],
       pinnedMessageText: map['pinnedMessageText'],
       pinnedMessageSenderName: map['pinnedMessageSenderName'],
+      bubbleThemeId: map['bubbleThemeId'],
+      wallpaperType: map['wallpaperType'],
+      wallpaperValue: map['wallpaperValue'],
     );
   }
 }

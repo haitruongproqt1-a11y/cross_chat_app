@@ -10,12 +10,14 @@ import 'avatar_widget.dart';
 import '../models/user_model.dart';
 import '../screens/wall/user_wall_screen.dart';
 import '../screens/tiktok/tiktok_viewer_screen.dart';
+import '../models/bubble_theme_model.dart';
 
 class MessageBubble extends StatefulWidget {
   final MessageModel message;
   final bool isMe;
   final String roomId;
   final String currentUserId;
+  final String? bubbleThemeId;
   final VoidCallback? onRecall;
   final VoidCallback? onDelete;
   final VoidCallback? onReply;
@@ -28,6 +30,7 @@ class MessageBubble extends StatefulWidget {
     required this.isMe,
     required this.roomId,
     required this.currentUserId,
+    this.bubbleThemeId,
     this.onRecall,
     this.onDelete,
     this.onReply,
@@ -175,6 +178,8 @@ class _MessageBubbleState extends State<MessageBubble> {
     final isMe = widget.isMe;
     final isRecalled = widget.message.isRecalled;
     final msg = widget.message;
+    final bubbleTheme = BubbleThemes.getTheme(widget.bubbleThemeId);
+    final isCustomTheme = bubbleTheme.id != 'default';
 
     final uniqueEmojis = msg.reactions.values.toSet().toList();
 
@@ -235,23 +240,51 @@ class _MessageBubbleState extends State<MessageBubble> {
                 decoration: BoxDecoration(
                   color: isRecalled
                       ? Colors.grey.withAlpha(50)
-                      : (isMe ? theme.colorScheme.primary : theme.cardTheme.color),
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isMe ? 16 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 16),
-                  ),
-                  border: isRecalled ? Border.all(color: Colors.grey.shade400, width: 0.5) : null,
+                      : (isCustomTheme
+                          ? (isMe ? bubbleTheme.sentBgColor : bubbleTheme.receivedBgColor)
+                          : (isMe ? theme.colorScheme.primary : theme.cardTheme.color)),
+                  gradient: !isRecalled && isCustomTheme
+                      ? (isMe && bubbleTheme.sentBgGradientEnd != null
+                          ? LinearGradient(
+                              colors: [bubbleTheme.sentBgColor, bubbleTheme.sentBgGradientEnd!],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : (!isMe && bubbleTheme.receivedBgGradientEnd != null
+                              ? LinearGradient(
+                                  colors: [bubbleTheme.receivedBgColor, bubbleTheme.receivedBgGradientEnd!],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null))
+                      : null,
+                  borderRadius: isCustomTheme
+                      ? BorderRadius.circular(bubbleTheme.borderRadius)
+                      : BorderRadius.only(
+                          topLeft: const Radius.circular(16),
+                          topRight: const Radius.circular(16),
+                          bottomLeft: Radius.circular(isMe ? 16 : 4),
+                          bottomRight: Radius.circular(isMe ? 4 : 16),
+                        ),
+                  border: isRecalled
+                      ? Border.all(color: Colors.grey.shade400, width: 0.5)
+                      : (isCustomTheme
+                          ? Border.all(
+                              color: isMe ? bubbleTheme.sentBorderColor : bubbleTheme.receivedBorderColor,
+                              width: isMe ? bubbleTheme.sentBorderWidth : bubbleTheme.receivedBorderWidth,
+                            )
+                          : null),
                   boxShadow: isRecalled
                       ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(10),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                      : (isCustomTheme
+                          ? bubbleTheme.boxShadow
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(10),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]),
                 ),
                 child: Column(
                   crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -264,7 +297,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isRecalled ? Colors.grey : theme.colorScheme.primary,
+                            color: isRecalled
+                                ? Colors.grey
+                                : (isCustomTheme ? bubbleTheme.receivedTextColor : theme.colorScheme.primary),
                           ),
                         ),
                       ),
@@ -318,7 +353,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                           AppConstants.formatTimestamp(msg.timestamp),
                           style: TextStyle(
                             fontSize: 10,
-                            color: isMe ? Colors.white70 : Colors.grey,
+                            color: isMe
+                                ? (isCustomTheme ? bubbleTheme.sentTextColor.withAlpha(180) : Colors.white70)
+                                : (isCustomTheme ? bubbleTheme.receivedTextColor.withAlpha(170) : Colors.grey),
                           ),
                         ),
                         if (isMe && !isRecalled) ...[
@@ -381,6 +418,28 @@ class _MessageBubbleState extends State<MessageBubble> {
                     ),
                   ),
                 ),
+
+              // Sticker trang trí góc trên phải (như thỏ mây, capybara, hoa...)
+              if (!isMe && !isRecalled && isCustomTheme && bubbleTheme.stickerTopRight != null)
+                Positioned(
+                  top: -10,
+                  right: 8,
+                  child: Text(
+                    bubbleTheme.stickerTopRight!,
+                    style: const TextStyle(fontSize: 17),
+                  ),
+                ),
+
+              // Sticker trang trí góc trên trái (như mây, đốm sáng...)
+              if (!isMe && !isRecalled && isCustomTheme && bubbleTheme.stickerTopLeft != null)
+                Positioned(
+                  top: -8,
+                  left: 6,
+                  child: Text(
+                    bubbleTheme.stickerTopLeft!,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
             ],
           ),
         ),
@@ -409,7 +468,11 @@ class _MessageBubbleState extends State<MessageBubble> {
       );
     }
 
-    final textColor = isMe ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color;
+    final bubbleTheme = BubbleThemes.getTheme(widget.bubbleThemeId);
+    final isCustomTheme = bubbleTheme.id != 'default';
+    final textColor = isCustomTheme
+        ? (isMe ? bubbleTheme.sentTextColor : bubbleTheme.receivedTextColor)
+        : (isMe ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color);
 
     switch (msg.type) {
       case MessageType.image:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TikTokViewerScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setUserAgent(
-        'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        'Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.127 Mobile Safari/537.36',
       )
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -68,20 +69,46 @@ class _TikTokViewerScreenState extends State<TikTokViewerScreen> {
               });
             }
           },
+          onNavigationRequest: (NavigationRequest request) {
+            final url = request.url.toLowerCase();
+            // Ngăn chặn các scheme ứng dụng bên ngoài như snssdk1233://, intent://, market://, tiktok://
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              debugPrint('Prevented deep link scheme: ${request.url}');
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
           onWebResourceError: (error) {
-            // Bỏ qua các lỗi tracking/analytics không quan trọng
-            if (error.isForMainFrame == true) {
+            final desc = error.description.toLowerCase();
+            // Bỏ qua hoàn toàn các lỗi scheme deep link hoặc tracker bị chặn
+            if (desc.contains('err_unknown_url_scheme') ||
+                desc.contains('err_blocked_by') ||
+                desc.contains('err_connection_refused')) {
+              return;
+            }
+            // Chỉ hiển thị thông báo nếu thực sự mất kết nối mạng
+            if (error.isForMainFrame == true &&
+                (desc.contains('err_name_not_resolved') ||
+                 desc.contains('err_internet_disconnected') ||
+                 desc.contains('err_connection_timed_out'))) {
               if (mounted) {
                 setState(() {
-                  _errorMessage = 'Không thể tải trang: ${error.description}';
+                  _errorMessage = 'Không thể kết nối Internet: ${error.description}';
                   _isLoading = false;
                 });
               }
             }
           },
         ),
-      )
-      ..loadRequest(Uri.parse(startUrl));
+      );
+
+    // Kích hoạt phát media tự động trên Android
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController = _controller.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+    }
+
+    _controller.loadRequest(Uri.parse(startUrl));
   }
 
   void _switchTab(int index) {

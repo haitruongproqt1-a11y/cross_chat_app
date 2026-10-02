@@ -510,6 +510,22 @@ class ChatService {
     }
   }
 
+  // Cập nhật giao diện phòng trò chuyện (kiểu bong bóng & hình nền)
+  Future<void> updateRoomTheme({
+    required String roomId,
+    String? bubbleThemeId,
+    String? wallpaperType,
+    String? wallpaperValue,
+  }) async {
+    final Map<String, dynamic> updateData = {};
+    if (bubbleThemeId != null) updateData['bubbleThemeId'] = bubbleThemeId;
+    if (wallpaperType != null) updateData['wallpaperType'] = wallpaperType;
+    if (wallpaperValue != null) updateData['wallpaperValue'] = wallpaperValue;
+    if (updateData.isNotEmpty) {
+      await _firestore.collection('chat_rooms').doc(roomId).update(updateData);
+    }
+  }
+
   // Tính khoảng cách giữa 2 tọa độ GPS (Công thức Haversine - đơn vị km)
   static double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
     const p = 0.017453292519943295; // Math.PI / 180

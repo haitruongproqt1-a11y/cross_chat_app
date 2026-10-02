@@ -16,6 +16,10 @@ import '../../models/user_model.dart';
 import '../wall/user_wall_screen.dart';
 import '../call/call_screen.dart';
 import '../tiktok/tiktok_viewer_screen.dart';
+import '../../models/wallpaper_model.dart';
+import '../../widgets/chat_wallpaper_widget.dart';
+import 'bubble_theme_picker_screen.dart';
+import 'wallpaper_picker_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -493,12 +497,54 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         const SnackBar(content: Text('Đã bỏ chặn thành công')),
                       );
                     }
+                  } else if (value == 'bubble_theme') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BubbleThemePickerScreen(
+                          roomId: widget.room.id,
+                          currentThemeId: currentRoom.bubbleThemeId ?? 'default',
+                        ),
+                      ),
+                    );
+                  } else if (value == 'wallpaper') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WallpaperPickerScreen(
+                          roomId: widget.room.id,
+                          currentWallpaperType: currentRoom.wallpaperType ?? 'preset',
+                          currentWallpaperValue: currentRoom.wallpaperValue ?? 'default',
+                        ),
+                      ),
+                    );
                   } else if (value == 'clear') {
                     _chatService.deleteRoom(widget.room.id);
                     Navigator.pop(context);
                   }
                 },
                 itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'bubble_theme',
+                    child: Row(
+                      children: [
+                        Icon(Icons.bubble_chart_outlined, color: Color(0xFFFE0979)),
+                        SizedBox(width: 8),
+                        Text('Đổi kiểu bong bóng chat'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'wallpaper',
+                    child: Row(
+                      children: [
+                        Icon(Icons.wallpaper, color: Color(0xFF0084FF)),
+                        SizedBox(width: 8),
+                        Text('Cài đặt hình nền'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
                   if (isDirect && otherUserId.isNotEmpty) ...[
                     if (!isFriend)
                       const PopupMenuItem(
@@ -559,7 +605,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
             ],
           ),
-          body: Column(
+          body: ChatWallpaperWidget(
+            wallpaper: currentRoom.wallpaperType == 'custom'
+                ? WallpaperThemes.getWallpaper('custom', customUrl: currentRoom.wallpaperValue)
+                : WallpaperThemes.getWallpaper(currentRoom.wallpaperValue),
+            child: Column(
             children: [
               if (_isUploading)
                 const LinearProgressIndicator(minHeight: 3),
@@ -680,6 +730,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           isMe: isMe,
                           roomId: widget.room.id,
                           currentUserId: currentUser?.uid ?? '',
+                          bubbleThemeId: currentRoom.bubbleThemeId,
                           onReply: () {
                             setState(() {
                               _replyingToMessage = msg;
@@ -852,6 +903,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 ),
             ],
           ),
+        ),
         );
       },
     );
