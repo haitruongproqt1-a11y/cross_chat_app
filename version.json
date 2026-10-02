@@ -1,9 +1,9 @@
 {
-  "version": "1.0.19",
-  "build_number": 20,
+  "version": "1.0.20",
+  "build_number": 21,
   "release_date": "2026-10-03",
-  "changelog": "- Khắc phục triệt để lỗi TikTok vuốt 1-2 video bị màn hình đen: Chuyển đổi định danh sang máy tính bảng Touch (iPad Safari), tự động gỡ bỏ modal chặn ngầm của TikTok, giữ luồng cuộn mượt mà vô tận\n- Thêm nút Đăng nhập tài khoản TikTok trực tiếp (👤): Lưu phiên đăng nhập an toàn, thả tim ❤️, bình luận 💬 và trải nghiệm luồng video đề xuất cá nhân hóa\n- Sửa hiển thị bong bóng chat đúng chủ sở hữu: Người dùng cài đặt kiểu bong bóng nào thì tin nhắn gửi đi của chính người đó sẽ mang phong cách và sticker trang trí của kiểu đó (🐰 thỏ mây, 🦫 capybara, 🦆 vịt/ếch,...), người nhận không cài đặt thì hiển thị bong bóng mặc định, người nhận có cài đặt thì hiển thị kiểu của người nhận\n- Cập nhật Live Preview xem trước trực tiếp: Hiển thị sticker và màu sắc chuẩn xác ngay trên bong bóng gửi đi của bạn",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/update_v1.0.19.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.19/app-arm64-v8a-release.apk"
+  "changelog": "- Tự động lưu phiên đăng nhập: Tự động vào thẳng ứng dụng khi mở app mà không cần nhập lại mật khẩu, chỉ yêu cầu đăng nhập lại khi người dùng bấm Đăng xuất\n- Xóa cuộc trò chuyện phong cách Zalo: Cho phép vuốt sang trái hiện nút 'XÓA' màu đỏ hoặc dí tay giữ lâu vào tên người dùng để xóa sạch toàn bộ nội dung tin nhắn\n- Tự do rời nhóm chat: Thành viên và Trưởng/Phó nhóm đều có quyền tự rời nhóm. Riêng Trưởng nhóm có thể chủ động trao lại Key hoặc hệ thống sẽ tự động chọn ngẫu nhiên một thành viên còn lại làm Trưởng nhóm mới\n- Quản trị viên & Cấp Key Phó nhóm: Trưởng nhóm có thể cấp/gỡ Key Phó nhóm cho tối đa 10 thành viên, quản lý quyền gửi tin nhắn và thêm thành viên giống Zalo\n- Nâng cao độ tương phản chữ ở giao diện sáng (Light Mode): Màu chữ đen đậm sắc nét (#0F172A, #1E293B, #334155), không bị mờ nhạt, cực kỳ dễ đọc",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/update_v1.0.20.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/app-arm64-v8a-release.apk"
 }

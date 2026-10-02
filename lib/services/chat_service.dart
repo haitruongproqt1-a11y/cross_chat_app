@@ -43,7 +43,9 @@ class ChatService {
         }
       }
 
-      final result = uniqueRooms.values.toList();
+      final result = uniqueRooms.values
+          .where((room) => !room.deletedForUsers.contains(currentUserId))
+          .toList();
       result.sort((a, b) {
         final timeA = a.lastMessageTime ?? a.createdAt;
         final timeB = b.lastMessageTime ?? b.createdAt;
@@ -217,6 +219,11 @@ class ChatService {
       memberIds: memberIds,
       memberNames: memberNames,
       createdBy: creator.uid,
+      ownerId: creator.uid,
+      deputyIds: const [],
+      onlyAdminsCanMessage: false,
+      onlyAdminsCanAddMembers: false,
+      deletedForUsers: const [],
       createdAt: DateTime.now(),
       lastMessage: '${creator.displayName} đã tạo nhóm',
       lastMessageTime: DateTime.now(),
@@ -402,6 +409,265 @@ class ChatService {
       await doc.reference.delete();
     }
     await _firestore.collection('chat_rooms').doc(roomId).delete();
+  }
+
+  // Xóa cuộc trò chuyện theo phong cách Zalo (xóa sạch tin nhắn hoặc ẩn khỏi danh sách)
+  Future<void> deleteConversation({
+    required String roomId,
+    required String userId,
+    required bool isDirect,
+  }) async {
+    if (isDirect) {
+      // Cuộc trò chuyện 1-1: Xóa hoàn toàn lịch sử tin nhắn và phòng chat
+      await deleteRoom(roomId);
+    } else {
+      // Phòng chat nhóm: Đánh dấu đã xóa khỏi màn hình của người dùng này
+      await _firestore.collection('chat_rooms').doc(roomId).update({
+        'deletedForUsers': FieldValue.arrayUnion([userId]),
+      });
+    }
+  }
+
+  // Tự rời nhóm (Bao gồm chuyển giao Key Trưởng nhóm bắt buộc hoặc chọn ngẫu nhiên)
+  Future<void> leaveGroup({
+    required String roomId,
+    required String userId,
+    required String userName,
+    String? newOwnerId,
+  }) async {
+    final doc = await _firestore.collection('chat_rooms').doc(roomId).get();
+    if (!doc.exists) return;
+
+    final room = ChatRoomModel.fromMap(doc.data()!, doc.id);
+    final isOwner = room.isOwner(userId);
+    final remainingMembers = room.memberIds.where((id) => id != userId).toList();
+
+    // Nếu không còn thành viên nào trong nhóm thì giải tán / xóa nhóm
+    if (remainingMembers.isEmpty) {
+      await deleteRoom(roomId);
+      return;
+    }
+
+    final updates = <String, dynamic>{
+      'memberIds': FieldValue.arrayRemove([userId]),
+      'deputyIds': FieldValue.arrayRemove([userId]),
+      'memberNames.$userId': FieldValue.delete(),
+    };
+
+    String systemMsg = '$userName đã rời khỏi nhóm.';
+
+    if (isOwner) {
+      String assignedOwnerId;
+      if (newOwnerId != null && remainingMembers.contains(newOwnerId)) {
+        assignedOwnerId = newOwnerId;
+      } else {
+        // Chọn ngẫu nhiên một thành viên còn lại trong nhóm làm Trưởng nhóm mới
+        final randList = List<String>.from(remainingMembers)..shuffle(Random());
+        assignedOwnerId = randList.first;
+      }
+
+      final newOwnerName = room.memberNames[assignedOwnerId] ?? 'Thành viên mới';
+      updates['ownerId'] = assignedOwnerId;
+      updates['deputyIds'] = FieldValue.arrayRemove([userId, assignedOwnerId]);
+      systemMsg = '$userName đã rời nhóm. Quyền Trưởng nhóm được trao lại cho $newOwnerName.';
+    }
+
+    updates['lastMessage'] = systemMsg;
+    updates['lastMessageTime'] = DateTime.now().millisecondsSinceEpoch;
+    updates['lastMessageSenderId'] = 'system';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update(updates);
+
+    // Gửi tin nhắn thông báo hệ thống vào nhóm
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+  }
+
+  // Chuyển giao quyền Trưởng nhóm (Key chính)
+  Future<void> transferGroupOwnership({
+    required String roomId,
+    required String currentOwnerId,
+    required String currentOwnerName,
+    required String newOwnerId,
+    required String newOwnerName,
+  }) async {
+    final systemMsg = '$currentOwnerName đã trao quyền Trưởng nhóm cho $newOwnerName.';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'ownerId': newOwnerId,
+      'deputyIds': FieldValue.arrayRemove([newOwnerId]),
+      'lastMessage': systemMsg,
+      'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+      'lastMessageSenderId': 'system',
+    });
+
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+  }
+
+  // Bổ nhiệm Phó nhóm (giới hạn tối đa 10 Phó nhóm)
+  Future<bool> appointDeputy({
+    required String roomId,
+    required String currentOwnerId,
+    required String targetUserId,
+    required String targetUserName,
+  }) async {
+    final doc = await _firestore.collection('chat_rooms').doc(roomId).get();
+    if (!doc.exists) return false;
+    final room = ChatRoomModel.fromMap(doc.data()!, doc.id);
+
+    if (room.deputyIds.length >= 10) {
+      throw Exception('Nhóm đã có tối đa 10 Phó nhóm.');
+    }
+    if (room.deputyIds.contains(targetUserId)) {
+      return true;
+    }
+
+    final systemMsg = '$targetUserName đã được bổ nhiệm làm Phó nhóm.';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'deputyIds': FieldValue.arrayUnion([targetUserId]),
+      'lastMessage': systemMsg,
+      'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+      'lastMessageSenderId': 'system',
+    });
+
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+
+    return true;
+  }
+
+  // Thu hồi quyền Phó nhóm
+  Future<void> revokeDeputy({
+    required String roomId,
+    required String currentOwnerId,
+    required String targetUserId,
+    required String targetUserName,
+  }) async {
+    final systemMsg = '$targetUserName đã bị thu hồi quyền Phó nhóm.';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'deputyIds': FieldValue.arrayRemove([targetUserId]),
+      'lastMessage': systemMsg,
+      'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+      'lastMessageSenderId': 'system',
+    });
+
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+  }
+
+  // Mời/Xóa thành viên khỏi nhóm
+  Future<void> removeMemberFromGroup({
+    required String roomId,
+    required UserModel admin,
+    required String targetUserId,
+    required String targetUserName,
+  }) async {
+    final systemMsg = '${admin.displayName} đã mời $targetUserName rời khỏi nhóm.';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'memberIds': FieldValue.arrayRemove([targetUserId]),
+      'deputyIds': FieldValue.arrayRemove([targetUserId]),
+      'memberNames.$targetUserId': FieldValue.delete(),
+      'lastMessage': systemMsg,
+      'lastMessageTime': DateTime.now().millisecondsSinceEpoch,
+      'lastMessageSenderId': 'system',
+    });
+
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+  }
+
+  // Thêm thành viên mới vào nhóm
+  Future<void> addMembersToGroup({
+    required String roomId,
+    required UserModel admin,
+    required List<UserModel> newMembers,
+  }) async {
+    if (newMembers.isEmpty) return;
+
+    final updates = <String, dynamic>{
+      'memberIds': FieldValue.arrayUnion(newMembers.map((u) => u.uid).toList()),
+    };
+
+    for (var u in newMembers) {
+      updates['memberNames.${u.uid}'] = u.displayName;
+    }
+
+    final names = newMembers.map((u) => u.displayName).join(', ');
+    final systemMsg = '${admin.displayName} đã thêm $names vào nhóm.';
+
+    updates['lastMessage'] = systemMsg;
+    updates['lastMessageTime'] = DateTime.now().millisecondsSinceEpoch;
+    updates['lastMessageSenderId'] = 'system';
+
+    await _firestore.collection('chat_rooms').doc(roomId).update(updates);
+
+    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc();
+    await msgRef.set(MessageModel(
+      id: msgRef.id,
+      senderId: 'system',
+      senderName: 'Hệ Thống',
+      content: systemMsg,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+    ).toMap());
+  }
+
+  // Cập nhật cài đặt nhóm (Tên, Ảnh, Quyền nhắn tin, Quyền thêm người)
+  Future<void> updateGroupSettings({
+    required String roomId,
+    String? name,
+    String? photoUrl,
+    bool? onlyAdminsCanMessage,
+    bool? onlyAdminsCanAddMembers,
+  }) async {
+    final Map<String, dynamic> updates = {};
+    if (name != null && name.trim().isNotEmpty) updates['name'] = name.trim();
+    if (photoUrl != null) updates['photoUrl'] = photoUrl;
+    if (onlyAdminsCanMessage != null) updates['onlyAdminsCanMessage'] = onlyAdminsCanMessage;
+    if (onlyAdminsCanAddMembers != null) updates['onlyAdminsCanAddMembers'] = onlyAdminsCanAddMembers;
+
+    if (updates.isNotEmpty) {
+      await _firestore.collection('chat_rooms').doc(roomId).update(updates);
+    }
   }
 
   // Lấy danh sách BẠN BÈ thực tế (Chỉ người đã kết bạn)

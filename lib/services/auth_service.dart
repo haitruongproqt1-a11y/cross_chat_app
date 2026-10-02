@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'notification_service.dart';
 import 'security_service.dart';
@@ -112,6 +113,16 @@ class AuthService {
 
         await _updateOnlineStatus(true);
         await _syncFcmToken();
+
+        // Lưu thông tin đăng nhập tự động cho những lần sau
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('saved_login_identifier', clean);
+          await prefs.setString('saved_login_password', SecurityService().encryptPassword(password.trim()));
+        } catch (e) {
+          debugPrint('Lỗi lưu phiên đăng nhập: $e');
+        }
+
         return _currentUser;
       }
     } catch (e) {
@@ -178,6 +189,16 @@ class AuthService {
         await _firestore.collection('users').doc(user.uid).set(data);
         _currentUser = newUser;
         await _syncFcmToken();
+
+        // Lưu thông tin đăng nhập tự động cho những lần sau
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('saved_login_identifier', cleanUsername);
+          await prefs.setString('saved_login_password', SecurityService().encryptPassword(password.trim()));
+        } catch (e) {
+          debugPrint('Lỗi lưu phiên đăng ký: $e');
+        }
+
         return _currentUser;
       }
     } catch (e) {
@@ -257,7 +278,7 @@ class AuthService {
     await loadCurrentUserData();
   }
 
-  // Tải thông tin tài khoản hiện tại
+  // Tải thông tin tài khoản hiện tại (tự động đăng nhập lại nếu phiên đã được lưu)
   Future<UserModel?> loadCurrentUserData() async {
     final user = _auth.currentUser;
     if (user != null) {
@@ -271,6 +292,23 @@ class AuthService {
         debugPrint('Lỗi tải thông tin user: $e');
       }
     }
+
+    // Nếu Firebase Auth chưa có phiên (ví dụ trên Windows hoặc vừa mở lại app), tự động đăng nhập từ phiên đã lưu
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedId = prefs.getString('saved_login_identifier');
+      final savedEncPass = prefs.getString('saved_login_password');
+      if (savedId != null && savedEncPass != null && savedId.isNotEmpty && savedEncPass.isNotEmpty) {
+        final decryptedPass = SecurityService().decryptPassword(savedEncPass);
+        if (decryptedPass.isNotEmpty) {
+          debugPrint('Tự động đăng nhập lại từ phiên lưu trữ cho: $savedId');
+          return await signIn(loginIdentifier: savedId, password: decryptedPass);
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi tự động đăng nhập từ bộ nhớ máy: $e');
+    }
+
     return null;
   }
 
@@ -336,10 +374,15 @@ class AuthService {
     } catch (_) {}
   }
 
-  // Đăng xuất
+  // Đăng xuất (xóa phiên lưu trữ để không tự động đăng nhập nữa)
   Future<void> signOut() async {
     await _updateOnlineStatus(false);
     await _auth.signOut();
     _currentUser = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_login_identifier');
+      await prefs.remove('saved_login_password');
+    } catch (_) {}
   }
 }

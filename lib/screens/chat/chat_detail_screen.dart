@@ -20,6 +20,7 @@ import '../../models/wallpaper_model.dart';
 import '../../widgets/chat_wallpaper_widget.dart';
 import 'bubble_theme_picker_screen.dart';
 import 'wallpaper_picker_screen.dart';
+import 'group_settings_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -403,6 +404,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                               ),
                             ),
                           );
+                        } else if (!isDirect) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => GroupSettingsScreen(room: currentRoom),
+                            ),
+                          );
                         }
                       },
                       child: isDirect
@@ -421,24 +429,51 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        roomDisplayName,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        widget.room.type == ChatRoomType.group
-                            ? '${widget.room.memberIds.length} thành viên'
-                            : (isBlockedByMe ? 'Đã bị chặn' : 'Đang hoạt động'),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isBlockedByMe ? Colors.redAccent : Colors.green,
+                  child: InkWell(
+                    onTap: () {
+                      if (!isDirect) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => GroupSettingsScreen(room: currentRoom),
+                          ),
+                        );
+                      } else if (otherUserId.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserWallScreen(
+                              targetUser: UserModel(
+                                uid: otherUserId,
+                                email: '',
+                                displayName: roomDisplayName,
+                                photoUrl: currentRoom.photoUrl ?? '',
+                                lastSeen: DateTime.now(),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          roomDisplayName,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        Text(
+                          widget.room.type == ChatRoomType.group
+                              ? '${currentRoom.memberIds.length} thành viên • Quản lý'
+                              : (isBlockedByMe ? 'Đã bị chặn' : 'Đang hoạt động'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isBlockedByMe ? Colors.redAccent : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -520,12 +555,56 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         ),
                       ),
                     );
+                  } else if (value == 'group_settings') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => GroupSettingsScreen(room: currentRoom),
+                      ),
+                    );
                   } else if (value == 'clear') {
-                    _chatService.deleteRoom(widget.room.id);
-                    Navigator.pop(context);
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Xóa cuộc trò chuyện?'),
+                        content: const Text('Toàn bộ nội dung tin nhắn sẽ bị xóa vĩnh viễn và không thể khôi phục.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Xóa'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      await _chatService.deleteConversation(
+                        roomId: widget.room.id,
+                        userId: currentUser.uid,
+                        isDirect: isDirect,
+                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    }
                   }
                 },
                 itemBuilder: (context) => [
+                  if (!isDirect) ...[
+                    const PopupMenuItem(
+                      value: 'group_settings',
+                      child: Row(
+                        children: [
+                          Icon(Icons.settings_outlined, color: Colors.blueAccent),
+                          SizedBox(width: 8),
+                          Text('Cài đặt nhóm'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                  ],
                   const PopupMenuItem(
                     value: 'bubble_theme',
                     child: Row(
@@ -838,6 +917,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           }
                         },
                         child: const Text('Bỏ chặn', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                )
+              else if (currentUser != null && !currentRoom.canSendMessage(currentUser.uid))
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  color: Colors.amber.withAlpha(25),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock_outline, size: 18, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Chỉ Trưởng nhóm và Phó nhóm mới có thể gửi tin nhắn trong nhóm này.',
+                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),

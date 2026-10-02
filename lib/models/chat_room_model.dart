@@ -15,6 +15,11 @@ class ChatRoomModel {
   final String? lastMessageSenderId;
   final int unreadCount;
   final String? createdBy;
+  final String? ownerId; // Chủ nhóm / Người giữ Key chính
+  final List<String> deputyIds; // Danh sách Phó nhóm / Key phụ (tối đa 10 người)
+  final bool onlyAdminsCanMessage; // Chỉ Trưởng/Phó nhóm mới được gửi tin nhắn
+  final bool onlyAdminsCanAddMembers; // Chỉ Trưởng/Phó nhóm mới được thêm thành viên
+  final List<String> deletedForUsers; // Danh sách người dùng đã xóa cuộc trò chuyện này khỏi danh sách
   final DateTime createdAt;
   final String? pinnedMessageId;
   final String? pinnedMessageText;
@@ -35,6 +40,11 @@ class ChatRoomModel {
     this.lastMessageSenderId,
     this.unreadCount = 0,
     this.createdBy,
+    this.ownerId,
+    this.deputyIds = const [],
+    this.onlyAdminsCanMessage = false,
+    this.onlyAdminsCanAddMembers = false,
+    this.deletedForUsers = const [],
     required this.createdAt,
     this.pinnedMessageId,
     this.pinnedMessageText,
@@ -43,6 +53,12 @@ class ChatRoomModel {
     this.wallpaperType,
     this.wallpaperValue,
   });
+
+  String get effectiveOwnerId => (ownerId != null && ownerId!.isNotEmpty) ? ownerId! : (createdBy ?? '');
+  bool isOwner(String userId) => effectiveOwnerId == userId;
+  bool isDeputy(String userId) => deputyIds.contains(userId);
+  bool isAdmin(String userId) => isOwner(userId) || isDeputy(userId);
+  bool canSendMessage(String userId) => type != ChatRoomType.group || !onlyAdminsCanMessage || isAdmin(userId);
 
   Map<String, dynamic> toMap() {
     return {
@@ -57,6 +73,11 @@ class ChatRoomModel {
       'lastMessageSenderId': lastMessageSenderId,
       'unreadCount': unreadCount,
       'createdBy': createdBy,
+      'ownerId': effectiveOwnerId,
+      'deputyIds': deputyIds,
+      'onlyAdminsCanMessage': onlyAdminsCanMessage,
+      'onlyAdminsCanAddMembers': onlyAdminsCanAddMembers,
+      'deletedForUsers': deletedForUsers,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'pinnedMessageId': pinnedMessageId,
       'pinnedMessageText': pinnedMessageText,
@@ -88,6 +109,9 @@ class ChatRoomModel {
       return null;
     }
 
+    final rawCreatedBy = map['createdBy'] as String?;
+    final rawOwnerId = map['ownerId'] as String?;
+
     return ChatRoomModel(
       id: id,
       name: map['name'] ?? '',
@@ -99,7 +123,12 @@ class ChatRoomModel {
       lastMessageTime: parseDate(map['lastMessageTime']),
       lastMessageSenderId: map['lastMessageSenderId'],
       unreadCount: map['unreadCount'] ?? 0,
-      createdBy: map['createdBy'],
+      createdBy: rawCreatedBy,
+      ownerId: (rawOwnerId != null && rawOwnerId.isNotEmpty) ? rawOwnerId : rawCreatedBy,
+      deputyIds: List<String>.from(map['deputyIds'] ?? []),
+      onlyAdminsCanMessage: map['onlyAdminsCanMessage'] ?? false,
+      onlyAdminsCanAddMembers: map['onlyAdminsCanAddMembers'] ?? false,
+      deletedForUsers: List<String>.from(map['deletedForUsers'] ?? []),
       createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
       pinnedMessageId: map['pinnedMessageId'],
       pinnedMessageText: map['pinnedMessageText'],
