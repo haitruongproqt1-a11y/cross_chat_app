@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AvatarWidget extends StatelessWidget {
   final String? photoUrl;
@@ -75,3 +76,57 @@ class AvatarWidget extends StatelessWidget {
     );
   }
 }
+
+/// Widget hiển thị Avatar người dùng theo thời gian thực (Realtime Avatar)
+/// Tự động lấy avatar mới nhất từ Firestore khi user vừa cập nhật
+class DirectUserAvatar extends StatelessWidget {
+  final String userId;
+  final String fallbackName;
+  final String? fallbackPhotoUrl;
+  final double radius;
+  final bool showBadge;
+
+  const DirectUserAvatar({
+    super.key,
+    required this.userId,
+    required this.fallbackName,
+    this.fallbackPhotoUrl,
+    this.radius = 24,
+    this.showBadge = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (userId.isEmpty) {
+      return AvatarWidget(
+        photoUrl: fallbackPhotoUrl,
+        name: fallbackName,
+        radius: radius,
+        showBadge: showBadge,
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
+        final photoUrl = (data?['photoUrl'] as String?)?.isNotEmpty == true
+            ? data!['photoUrl'] as String
+            : fallbackPhotoUrl;
+        final name = (data?['displayName'] as String?)?.isNotEmpty == true
+            ? data!['displayName'] as String
+            : fallbackName;
+        final isOnline = data?['isOnline'] as bool? ?? false;
+
+        return AvatarWidget(
+          photoUrl: photoUrl,
+          name: name,
+          radius: radius,
+          isOnline: isOnline,
+          showBadge: showBadge,
+        );
+      },
+    );
+  }
+}
+

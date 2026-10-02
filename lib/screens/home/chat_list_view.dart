@@ -139,14 +139,26 @@ class _ChatListViewState extends State<ChatListView> {
 
                     final displayName = room.getDisplayName(currentUser.uid);
 
+                    final otherUserId = room.type == ChatRoomType.direct
+                        ? room.memberIds.firstWhere((id) => id != currentUser.uid, orElse: () => '')
+                        : '';
+
                     return ListTile(
                       selected: isSelected,
                       selectedTileColor: Theme.of(context).colorScheme.primary.withAlpha(20),
-                      leading: AvatarWidget(
-                        photoUrl: room.photoUrl,
-                        name: displayName,
-                        radius: 24,
-                      ),
+                      leading: room.type == ChatRoomType.direct
+                          ? DirectUserAvatar(
+                              userId: otherUserId,
+                              fallbackName: displayName,
+                              fallbackPhotoUrl: room.photoUrl,
+                              radius: 24,
+                              showBadge: true,
+                            )
+                          : AvatarWidget(
+                              photoUrl: room.photoUrl,
+                              name: displayName,
+                              radius: 24,
+                            ),
                       title: Text(
                         displayName,
                         style: const TextStyle(fontWeight: FontWeight.bold),

@@ -8,6 +8,9 @@ import '../utils/constants.dart';
 import '../services/location_service.dart';
 import 'full_screen_image_viewer.dart';
 import 'video_player_screen.dart';
+import 'avatar_widget.dart';
+import '../models/user_model.dart';
+import '../screens/wall/user_wall_screen.dart';
 
 class MessageBubble extends StatefulWidget {
   final MessageModel message;
@@ -176,26 +179,60 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final uniqueEmojis = msg.reactions.values.toSet().toList();
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
-        ),
-        child: GestureDetector(
-          onLongPress: () => _showContextMenu(context),
-          onDoubleTap: !isRecalled ? () => widget.onReact?.call('❤️') : null,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                margin: EdgeInsets.only(
-                  left: 12,
-                  right: 12,
-                  top: 4,
-                  bottom: msg.reactions.isNotEmpty ? 14 : 4,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserWallScreen(
+                      targetUser: UserModel(
+                        uid: msg.senderId,
+                        email: '',
+                        displayName: msg.senderName,
+                        photoUrl: msg.senderAvatar ?? '',
+                        lastSeen: DateTime.now(),
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(right: 6, bottom: 2),
+                child: DirectUserAvatar(
+                  userId: msg.senderId,
+                  fallbackName: msg.senderName,
+                  fallbackPhotoUrl: msg.senderAvatar,
+                  radius: 15,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+          ],
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.74,
+              ),
+              child: GestureDetector(
+                onLongPress: () => _showContextMenu(context),
+                onDoubleTap: !isRecalled ? () => widget.onReact?.call('❤️') : null,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(
+                        left: 4,
+                        right: 4,
+                        top: 2,
+                        bottom: msg.reactions.isNotEmpty ? 14 : 2,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isRecalled
                       ? Colors.grey.withAlpha(50)
@@ -349,7 +386,10 @@ class _MessageBubbleState extends State<MessageBubble> {
           ),
         ),
       ),
-    );
+    ),
+  ],
+),
+);
   }
 
   Widget _buildMessageContent(BuildContext context) {

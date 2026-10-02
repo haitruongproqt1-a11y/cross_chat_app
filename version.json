@@ -1,9 +1,9 @@
 {
-  "version": "1.0.9",
-  "build_number": 10,
+  "version": "1.0.10",
+  "build_number": 11,
   "release_date": "2026-10-02",
-  "changelog": "- Thả cảm xúc / Biểu cảm nhanh tin nhắn chuẩn Zalo: Thả ❤️, 👍, 😂, 😮, 😢, 😡, chạm đúp để thả tim siêu nhanh, huy hiệu đếm cảm xúc realtime ngay trên tin nhắn\n- Ghim tin nhắn quan trọng (Pin Message): Ghim tin nhắn quan trọng lên đầu phòng chat, thanh ghim nổi bật kèm nút gỡ ghim tiện lợi\n- Trả lời & Trích dẫn tin nhắn (Reply / Quote): Trả lời trực tiếp tin nhắn bất kỳ với hộp trích dẫn đẹp mắt chuẩn Zalo\n- Trạng thái tin nhắn rõ ràng: Đầy đủ các mốc Đã gửi, Đã nhận, Đã xem\n- Bày tỏ cảm xúc đa dạng trên Tường nhà / Nhật ký: Nhấn giữ nút Thích để chọn cảm xúc ❤️, 👍, 😂, 😮, 😢, 😡 kèm thống kê số lượng biểu cảm chi tiết",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.9/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.9/update_v1.0.9.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.9/app-arm64-v8a-release.apk"
+  "changelog": "- Khắc phục triệt để lỗi văng ứng dụng khi chia sẻ màn hình trên Android 14+ (đồng bộ MediaProjection token và thích ứng độ phân giải 20:9)\n- Hiển thị Avatar người dùng theo thời gian thực (Realtime) ở tất cả màn hình chat: Danh sách cuộc trò chuyện, Tiêu đề phòng chat (AppBar), và từng bong bóng tin nhắn\n- Chạm vào Avatar trong phòng chat hoặc tin nhắn để xem ngay Tường cá nhân / Nhật ký của bạn bè",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/update_v1.0.10.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.10/app-arm64-v8a-release.apk"
 }

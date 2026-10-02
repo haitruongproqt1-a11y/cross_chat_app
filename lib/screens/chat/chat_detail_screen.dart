@@ -12,6 +12,8 @@ import '../../services/location_service.dart';
 import '../../widgets/message_bubble.dart';
 import '../../widgets/media_attachment_sheet.dart';
 import '../../widgets/avatar_widget.dart';
+import '../../models/user_model.dart';
+import '../wall/user_wall_screen.dart';
 import '../call/call_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
@@ -312,11 +314,39 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 titleSpacing: 0,
                 title: Row(
                   children: [
-                    AvatarWidget(
-                      photoUrl: currentRoom.photoUrl,
-                      name: roomDisplayName,
-                  radius: 18,
-                ),
+                    GestureDetector(
+                      onTap: () {
+                        if (isDirect && otherUserId.isNotEmpty) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UserWallScreen(
+                                targetUser: UserModel(
+                                  uid: otherUserId,
+                                  email: '',
+                                  displayName: roomDisplayName,
+                                  photoUrl: currentRoom.photoUrl ?? '',
+                                  lastSeen: DateTime.now(),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: isDirect
+                          ? DirectUserAvatar(
+                              userId: otherUserId,
+                              fallbackName: roomDisplayName,
+                              fallbackPhotoUrl: currentRoom.photoUrl,
+                              radius: 18,
+                              showBadge: true,
+                            )
+                          : AvatarWidget(
+                              photoUrl: currentRoom.photoUrl,
+                              name: roomDisplayName,
+                              radius: 18,
+                            ),
+                    ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
