@@ -204,8 +204,25 @@ class WebRtcService {
       _peerConnection?.addTrack(track, _localStream!);
     });
 
+    // Luôn khởi tạo video transceiver trong SDP để hỗ trợ bật camera / chia sẻ màn hình bất kỳ lúc nào
+    final senders = await _peerConnection!.getSenders();
+    final hasVideoSender = senders.any((s) => s.track?.kind == 'video');
+    if (!hasVideoSender) {
+      try {
+        await _peerConnection!.addTransceiver(
+          kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+          init: RTCRtpTransceiverInit(direction: TransceiverDirection.SendRecv),
+        );
+      } catch (e) {
+        debugPrint('addTransceiver video error: $e');
+      }
+    }
+
     // Create SDP Offer with Ultra-Low Latency & Anti-Lag optimizations
-    final offer = await _peerConnection!.createOffer();
+    final offer = await _peerConnection!.createOffer({
+      'offerToReceiveAudio': 1,
+      'offerToReceiveVideo': 1,
+    });
     final optimizedSdp = _optimizeSdp(offer.sdp ?? '');
     final optimizedOffer = RTCSessionDescription(optimizedSdp, offer.type);
     await _peerConnection!.setLocalDescription(optimizedOffer);
@@ -354,7 +371,10 @@ class WebRtcService {
     }
 
     // 2. Tạo và Set SDP Answer với tối ưu độ trễ thấp
-    final answer = await _peerConnection!.createAnswer();
+    final answer = await _peerConnection!.createAnswer({
+      'offerToReceiveAudio': 1,
+      'offerToReceiveVideo': 1,
+    });
     final optimizedSdp = _optimizeSdp(answer.sdp ?? '');
     final optimizedAnswer = RTCSessionDescription(optimizedSdp, answer.type);
     await _peerConnection!.setLocalDescription(optimizedAnswer);
@@ -444,6 +464,22 @@ class WebRtcService {
     bool shareDeviceAudio = false,
   }) async {
     try {
+      // 1. Constraints linh hoat tuong thich 100% moi man hinh Android, khong ep cung mandatory gay loi MediaCodec
+      final mediaConstraints = <String, dynamic>{
+        'video': true,
+        'audio': false,
+      };
+
+      // 2. Yeu cau quyen ghi man hinh tu he thong Android
+      _screenStream = await navigator.mediaDevices.getDisplayMedia(mediaConstraints);
+      final screenTrack = _screenStream?.getVideoTracks().firstOrNull;
+
+      if (screenTrack == null) {
+        return false;
+      }
+
+      // 3. Khoi chay Foreground Service tren Android CHI SAU KHI nguoi dung da cap quyen ghi man hinh
+      // Tranh vi pham quy dinh bao mat MediaProjection cua Android 14+ gay SecurityException / Crash app
       if (defaultTargetPlatform == TargetPlatform.android) {
         try {
           const channel = MethodChannel('com.example.cross_chat_app/screen_share');
@@ -453,26 +489,7 @@ class WebRtcService {
         }
       }
 
-      final mediaConstraints = <String, dynamic>{
-        'video': {
-          'mandatory': {
-            'minWidth': 720,
-            'minHeight': 1280,
-            'maxWidth': 1080,
-            'maxHeight': 1920,
-            'maxFrameRate': 30,
-          },
-          'optional': [
-            {'googCpuOveruseDetection': true},
-          ],
-        },
-        'audio': shareDeviceAudio,
-      };
-
-      _screenStream = await navigator.mediaDevices.getDisplayMedia(mediaConstraints);
-      final screenTrack = _screenStream?.getVideoTracks().firstOrNull;
-
-      if (screenTrack != null && _peerConnection != null) {
+      if (_peerConnection != null) {
         final senders = await _peerConnection!.getSenders();
         bool videoSenderFound = false;
         for (var sender in senders) {
@@ -487,7 +504,7 @@ class WebRtcService {
         localRenderer.srcObject = _screenStream;
       }
 
-      // Đảm bảo micro từ localStream vẫn bật để 2 bên tiếp tục đàm thoại
+      // Dam bao micro tu localStream van bat de 2 ben tiep tuc dam thoai song song
       _localStream?.getAudioTracks().forEach((track) {
         track.enabled = true;
         try {
@@ -495,18 +512,12 @@ class WebRtcService {
         } catch (_) {}
       });
 
-      // Nếu chia sẻ âm thanh thiết bị (nhạc / video), gửi kèm track âm thanh đó
-      final screenAudioTrack = _screenStream?.getAudioTracks().firstOrNull;
-      if (screenAudioTrack != null && _peerConnection != null) {
-        await _peerConnection!.addTrack(screenAudioTrack, _screenStream!);
-      }
-
       _isScreenSharing = true;
       await _firestore.collection('calls').doc(callId).update({
         'isScreenSharing': true,
       });
 
-      screenTrack?.onEnded = () {
+      screenTrack.onEnded = () {
         stopScreenSharing(callId: callId, localRenderer: localRenderer);
       };
 
@@ -548,6 +559,8 @@ class WebRtcService {
           }
         }
         localRenderer.srcObject = _localStream;
+      } else {
+        localRenderer.srcObject = null;
       }
 
       _isScreenSharing = false;
