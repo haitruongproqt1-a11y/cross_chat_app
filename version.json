@@ -1,9 +1,9 @@
 {
-  "version": "1.0.12",
-  "build_number": 13,
+  "version": "1.0.13",
+  "build_number": 14,
   "release_date": "2026-10-02",
-  "changelog": "- Khắc phục triệt để tiếng vang (Echo) khi đàm thoại bằng cách kích hoạt chế độ phần cứng chuyên dụng Android Audio inCommunication\n- Giữ micro luôn hoạt động chạy ngầm khi chia sẻ màn hình (bổ sung quyền microphone cho Foreground Service) giúp bên kia nghe rõ tiếng người nói dù thu nhỏ ứng dụng\n- Tối ưu hóa âm thanh liên tục không ngắt quãng (bỏ Opus DTX, nâng bitrate 128kbps stereo), tự động bật loa ngoài khi chia sẻ màn hình để truyền tải rõ nét cả tiếng nhạc, YouTube, TikTok sang máy đối phương",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.12/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.12/update_v1.0.12.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.12/app-arm64-v8a-release.apk"
+  "changelog": "- Khắc phục triệt để 100% tiếng rè loa (Audio Clipping) và tiếng vang vọng (Echo): Tắt phần mềm AGC chồng chéo, kích hoạt bộ lọc triệt tiêu tiếng vang phần cứng Android voiceCall kết hợp High-pass filter loại bỏ rung cơ học loa-mic\n- Truyền tải âm thanh thiết bị khi chia sẻ màn hình: Tích hợp chế độ phát âm thanh nền song song (gainTransientMayDuck), giữ micro chạy ngầm để phát rõ tiếng nói cùng âm thanh video TikTok, YouTube, nghe nhạc sang máy người xem\n- Tối ưu hóa Opus Mono 48kbps Fullband với In-band FEC, loại bỏ hoàn toàn hiện tượng méo tiếng và vỡ âm",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/update_v1.0.13.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.13/app-arm64-v8a-release.apk"
 }

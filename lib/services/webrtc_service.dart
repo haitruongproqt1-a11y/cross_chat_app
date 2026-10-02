@@ -63,8 +63,8 @@ class WebRtcService {
     for (var line in lines) {
       var currentLine = line;
       if (opusPayloadType != null && currentLine.startsWith('a=fmtp:$opusPayloadType')) {
-        if (!currentLine.contains('minptime=')) {
-          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=128000;stereo=1;sprop-stereo=1;useinbandfec=1';
+        if (!currentLine.contains('maxaveragebitrate=')) {
+          currentLine = '$currentLine;maxaveragebitrate=48000;stereo=0;sprop-stereo=0;useinbandfec=1';
         }
       }
       modifiedLines.add(currentLine);
@@ -76,11 +76,18 @@ class WebRtcService {
   }
 
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
-    // 1. Kích hoạt chế độ đàm thoại phần cứng chuyên dụng trên Android (AEC + AGC) để triệt tiêu tiếng vang hoàn toàn
+    // 1. Kích hoạt chế độ đàm thoại phần cứng chuyên dụng trên Android (AEC + voiceCall) kết hợp gainTransientMayDuck để không bóp âm thanh YouTube/TikTok
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
         await Helper.setAndroidAudioConfiguration(
-          AndroidAudioConfiguration.communication,
+          AndroidAudioConfiguration(
+            manageAudioFocus: true,
+            androidAudioMode: AndroidAudioMode.inCommunication,
+            androidAudioFocusMode: AndroidAudioFocusMode.gainTransientMayDuck,
+            androidAudioStreamType: AndroidAudioStreamType.voiceCall,
+            androidAudioAttributesUsageType: AndroidAudioAttributesUsageType.voiceCommunication,
+            androidAudioAttributesContentType: AndroidAudioAttributesContentType.speech,
+          ),
         );
       } catch (e) {
         debugPrint('setAndroidAudioConfiguration error: $e');
@@ -90,11 +97,13 @@ class WebRtcService {
     final audioConstraints = <String, dynamic>{
       'echoCancellation': true,
       'noiseSuppression': true,
-      'autoGainControl': true,
+      'autoGainControl': false, // TẮT software AGC để chống bão hòa tín hiệu (clipping) gây rè loa và vỡ tiếng
       'googEchoCancellation': true,
+      'googEchoCancellation2': true,
       'googNoiseSuppression': true,
-      'googAutoGainControl': true,
-      'googHighpassFilter': false, // Tắt lọc cắt dải trầm để giữ trọn vẹn âm thanh video / nhạc khi phát
+      'googNoiseSuppression2': true,
+      'googAutoGainControl': false, // TẮT googAutoGainControl để giữ âm thanh trong trẻo, không khuếch đại tiếng ồn/tiếng vang
+      'googHighpassFilter': true, // BẬT HighpassFilter để cắt rung cơ học tần số thấp từ loa dội vào thân máy gây ù rè
       'googTypingNoiseDetection': false,
     };
 
@@ -180,9 +189,6 @@ class WebRtcService {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
-      try {
-        Helper.setSpeakerphoneOn(isVideoCall);
-      } catch (_) {}
     };
 
     _peerConnection?.onTrack = (RTCTrackEvent event) {
@@ -190,9 +196,6 @@ class WebRtcService {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
-        try {
-          Helper.setSpeakerphoneOn(isVideoCall);
-        } catch (_) {}
       }
     };
 
@@ -201,9 +204,6 @@ class WebRtcService {
       if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
-        try {
-          Helper.setSpeakerphoneOn(isVideoCall);
-        } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         onConnectionDisconnected?.call();
@@ -339,9 +339,6 @@ class WebRtcService {
       _remoteStream = stream;
       remoteRenderer.srcObject = _remoteStream;
       onConnectionConnected?.call();
-      try {
-        Helper.setSpeakerphoneOn(isVideoCall);
-      } catch (_) {}
     };
 
     _peerConnection?.onTrack = (RTCTrackEvent event) {
@@ -349,9 +346,6 @@ class WebRtcService {
         _remoteStream = event.streams[0];
         remoteRenderer.srcObject = _remoteStream;
         onConnectionConnected?.call();
-        try {
-          Helper.setSpeakerphoneOn(isVideoCall);
-        } catch (_) {}
       }
     };
 
@@ -360,9 +354,6 @@ class WebRtcService {
       if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         onConnectionConnected?.call();
-        try {
-          Helper.setSpeakerphoneOn(isVideoCall);
-        } catch (_) {}
       } else if (state == RTCIceConnectionState.RTCIceConnectionStateDisconnected ||
           state == RTCIceConnectionState.RTCIceConnectionStateFailed) {
         onConnectionDisconnected?.call();

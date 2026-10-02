@@ -317,7 +317,11 @@ class _CallScreenState extends State<CallScreen> {
           shareDeviceAudio: shareAudio,
         );
         if (mounted) {
-          setState(() {});
+          setState(() {
+            if (success) {
+              _isSpeakerOn = true;
+            }
+          });
           if (!success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Không thể bắt đầu chia sẻ màn hình. Vui lòng cấp quyền ghi màn hình.')),
