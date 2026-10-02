@@ -34,8 +34,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final List<Widget> _views = const [
     ChatListView(),
     ContactsView(),
-    UserWallScreen(),
     NearbyFriendsScreen(),
+    UserWallScreen(),
     SettingsView(),
   ];
 
@@ -300,17 +300,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline),
             selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Trò chuyện',
+            label: 'Tin nhắn',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
+            icon: Icon(Icons.contacts_outlined),
+            selectedIcon: Icon(Icons.contacts),
             label: 'Danh bạ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Nhật ký',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
@@ -318,9 +313,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             label: 'Quanh đây',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Cài đặt',
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'Trợ lý AI',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Cá nhân',
           ),
         ],
       ),
@@ -348,17 +348,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               NavigationRailDestination(
                 icon: Icon(Icons.chat_bubble_outline),
                 selectedIcon: Icon(Icons.chat_bubble),
-                label: Text('Trò chuyện'),
+                label: Text('Tin nhắn'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.people_outline),
-                selectedIcon: Icon(Icons.people),
+                icon: Icon(Icons.contacts_outlined),
+                selectedIcon: Icon(Icons.contacts),
                 label: Text('Danh bạ'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.dynamic_feed_outlined),
-                selectedIcon: Icon(Icons.dynamic_feed),
-                label: Text('Nhật ký'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.explore_outlined),
@@ -366,9 +361,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 label: Text('Quanh đây'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text('Cài đặt'),
+                icon: Icon(Icons.auto_awesome_outlined),
+                selectedIcon: Icon(Icons.auto_awesome),
+                label: Text('Trợ lý AI'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: Text('Cá nhân'),
               ),
             ],
           ),

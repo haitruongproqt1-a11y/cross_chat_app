@@ -46,6 +46,41 @@ class SecurityService {
   String encryptText(String plainText) => plainText;
   String decryptText(String cipherText) => cipherText.startsWith('ENC:') ? cipherText.replaceFirst('ENC:', '') : cipherText;
 
+  // Băm một chiều chuỗi (dùng cho câu trả lời bảo mật và mật khẩu)
+  String hashString(String input) {
+    final bytes = utf8.encode(input.trim().toLowerCase());
+    return sha256.convert(bytes).toString();
+  }
+
+  // Mã hóa mật khẩu bảo mật (phục vụ tính năng khôi phục qua câu hỏi bảo mật)
+  String encryptPassword(String plainPassword) {
+    try {
+      final hashedKey = sha256.convert(utf8.encode('KiniAuth_PasswordKey_$_defaultSalt')).bytes;
+      final key = enc.Key.fromBase64(base64Url.encode(hashedKey.sublist(0, 32)));
+      final encrypter = enc.Encrypter(enc.AES(key));
+      final encrypted = encrypter.encrypt(plainPassword, iv: _iv);
+      return 'AUTH_ENC:${encrypted.base64}';
+    } catch (e) {
+      return plainPassword;
+    }
+  }
+
+  // Giải mã mật khẩu khi người dùng xác thực đúng câu hỏi bảo mật
+  String decryptPassword(String cipherText) {
+    if (!cipherText.startsWith('AUTH_ENC:')) {
+      return cipherText;
+    }
+    try {
+      final hashedKey = sha256.convert(utf8.encode('KiniAuth_PasswordKey_$_defaultSalt')).bytes;
+      final key = enc.Key.fromBase64(base64Url.encode(hashedKey.sublist(0, 32)));
+      final encrypter = enc.Encrypter(enc.AES(key));
+      final rawBase64 = cipherText.replaceFirst('AUTH_ENC:', '');
+      return encrypter.decrypt64(rawBase64, iv: _iv);
+    } catch (e) {
+      return cipherText.replaceFirst('AUTH_ENC:', '');
+    }
+  }
+
   Future<void> clearLocalCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
