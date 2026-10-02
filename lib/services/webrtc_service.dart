@@ -64,7 +64,7 @@ class WebRtcService {
       var currentLine = line;
       if (opusPayloadType != null && currentLine.startsWith('a=fmtp:$opusPayloadType')) {
         if (!currentLine.contains('minptime=')) {
-          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;useinbandfec=1;usedtx=1';
+          currentLine = '$currentLine;minptime=10;ptime=20;maxaveragebitrate=128000;stereo=1;sprop-stereo=1;useinbandfec=1';
         }
       }
       modifiedLines.add(currentLine);
@@ -76,6 +76,17 @@ class WebRtcService {
   }
 
   Future<void> initLocalStream({required bool isVideo, required RTCVideoRenderer localRenderer}) async {
+    // 1. Kích hoạt chế độ đàm thoại phần cứng chuyên dụng trên Android (AEC + AGC) để triệt tiêu tiếng vang hoàn toàn
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await Helper.setAndroidAudioConfiguration(
+          AndroidAudioConfiguration.communication,
+        );
+      } catch (e) {
+        debugPrint('setAndroidAudioConfiguration error: $e');
+      }
+    }
+
     final audioConstraints = <String, dynamic>{
       'echoCancellation': true,
       'noiseSuppression': true,
@@ -83,8 +94,8 @@ class WebRtcService {
       'googEchoCancellation': true,
       'googNoiseSuppression': true,
       'googAutoGainControl': true,
-      'googHighpassFilter': true,
-      'googTypingNoiseDetection': true,
+      'googHighpassFilter': false, // Tắt lọc cắt dải trầm để giữ trọn vẹn âm thanh video / nhạc khi phát
+      'googTypingNoiseDetection': false,
     };
 
     final mediaConstraints = <String, dynamic>{
@@ -515,6 +526,11 @@ class WebRtcService {
         }
         localRenderer.srcObject = _screenStream;
       }
+
+      // Bật loa ngoài khi chia sẻ màn hình để âm thanh YouTube / TikTok / nhạc phát qua loa ngoài cho micro thu lại trọn vẹn
+      try {
+        await Helper.setSpeakerphoneOn(true);
+      } catch (_) {}
 
       // Dam bao micro tu localStream van bat de 2 ben tiep tuc dam thoai song song
       _localStream?.getAudioTracks().forEach((track) {

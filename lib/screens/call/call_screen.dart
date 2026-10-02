@@ -54,6 +54,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
+    _isSpeakerOn = widget.callType == CallType.video;
     _initCall();
   }
 
