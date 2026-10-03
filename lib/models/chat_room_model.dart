@@ -20,6 +20,7 @@ class ChatRoomModel {
   final bool onlyAdminsCanMessage; // Chỉ Trưởng/Phó nhóm mới được gửi tin nhắn
   final bool onlyAdminsCanAddMembers; // Chỉ Trưởng/Phó nhóm mới được thêm thành viên
   final List<String> deletedForUsers; // Danh sách người dùng đã xóa cuộc trò chuyện này khỏi danh sách
+  final List<String> pinnedUsers; // Danh sách người dùng ghim cuộc trò chuyện này lên đầu
   final DateTime createdAt;
   final String? pinnedMessageId;
   final String? pinnedMessageText;
@@ -45,6 +46,7 @@ class ChatRoomModel {
     this.onlyAdminsCanMessage = false,
     this.onlyAdminsCanAddMembers = false,
     this.deletedForUsers = const [],
+    this.pinnedUsers = const [],
     required this.createdAt,
     this.pinnedMessageId,
     this.pinnedMessageText,
@@ -59,6 +61,7 @@ class ChatRoomModel {
   bool isDeputy(String userId) => deputyIds.contains(userId);
   bool isAdmin(String userId) => isOwner(userId) || isDeputy(userId);
   bool canSendMessage(String userId) => type != ChatRoomType.group || !onlyAdminsCanMessage || isAdmin(userId);
+  bool isPinnedFor(String userId) => pinnedUsers.contains(userId);
 
   Map<String, dynamic> toMap() {
     return {
@@ -78,6 +81,7 @@ class ChatRoomModel {
       'onlyAdminsCanMessage': onlyAdminsCanMessage,
       'onlyAdminsCanAddMembers': onlyAdminsCanAddMembers,
       'deletedForUsers': deletedForUsers,
+      'pinnedUsers': pinnedUsers,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'pinnedMessageId': pinnedMessageId,
       'pinnedMessageText': pinnedMessageText,
@@ -129,6 +133,7 @@ class ChatRoomModel {
       onlyAdminsCanMessage: map['onlyAdminsCanMessage'] ?? false,
       onlyAdminsCanAddMembers: map['onlyAdminsCanAddMembers'] ?? false,
       deletedForUsers: List<String>.from(map['deletedForUsers'] ?? []),
+      pinnedUsers: List<String>.from(map['pinnedUsers'] ?? []),
       createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
       pinnedMessageId: map['pinnedMessageId'],
       pinnedMessageText: map['pinnedMessageText'],

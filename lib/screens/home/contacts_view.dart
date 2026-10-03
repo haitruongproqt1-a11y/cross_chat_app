@@ -13,6 +13,8 @@ import '../chat/create_group_screen.dart';
 import '../nearby/nearby_friends_screen.dart';
 import '../contacts/search_friends_screen.dart';
 import '../wall/user_wall_screen.dart';
+import '../../models/call_model.dart';
+import '../call/call_screen.dart';
 
 class ContactsView extends StatefulWidget {
   final Function(ChatRoomModel)? onRoomSelected;
@@ -69,6 +71,34 @@ class _ContactsViewState extends State<ContactsView> {
         MaterialPageRoute(builder: (_) => ChatDetailScreen(room: room)),
       );
     }
+  }
+
+  void _startCallWithUser(UserModel targetUser, CallType type) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = auth.currentUser;
+    if (currentUser == null) return;
+
+    final roomId = await _chatService.getOrCreateDirectRoom(
+      currentUser: currentUser,
+      otherUser: targetUser,
+    );
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallScreen(
+          callId: 'call_${roomId}_${DateTime.now().millisecondsSinceEpoch}',
+          remoteUserName: targetUser.displayName,
+          callType: type,
+          isCaller: true,
+          callerId: currentUser.uid,
+          callerName: currentUser.displayName,
+          receiverId: targetUser.uid,
+          roomId: roomId,
+        ),
+      ),
+    );
   }
 
   @override
@@ -431,10 +461,29 @@ class _ContactsViewState extends State<ContactsView> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF0284C7), size: 20),
+                              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF0284C7), size: 19),
                               tooltip: loc.t('tab_messages'),
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
                               onPressed: () => _startDirectChat(user),
                             ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.phone_outlined, color: Color(0xFF0284C7), size: 19),
+                              tooltip: loc.t('voice_call'),
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => _startCallWithUser(user, CallType.audio),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.videocam_outlined, color: Color(0xFF0284C7), size: 20),
+                              tooltip: loc.t('video_call'),
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => _startCallWithUser(user, CallType.video),
+                            ),
+                            const SizedBox(width: 2),
                             PopupMenuButton<String>(
                               icon: const Icon(Icons.more_vert, color: Color(0xFF94A3B8), size: 19),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

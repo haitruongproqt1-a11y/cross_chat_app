@@ -10,6 +10,7 @@ import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../chat/create_group_screen.dart';
 import '../chat/group_settings_screen.dart';
+import '../chat/wallpaper_picker_screen.dart';
 import '../tiktok/tiktok_viewer_screen.dart';
 import '../../services/localization_service.dart';
 
@@ -118,7 +119,7 @@ class _ChatListViewState extends State<ChatListView> {
     return false;
   }
 
-  // Menu tùy chọn khi dí tay giữ lâu vào tên người dùng (Long Press Menu)
+  // Menu tùy chọn khi dí tay giữ lâu hoặc bấm nút 3 chấm (Google Stitch ChatBottomSheet 100%)
   void _showChatLongPressMenu(
     BuildContext context,
     ChatRoomModel room,
@@ -129,69 +130,284 @@ class _ChatListViewState extends State<ChatListView> {
     final otherUserId = room.type == ChatRoomType.direct
         ? room.memberIds.firstWhere((id) => id != currentUserId, orElse: () => '')
         : '';
+    final isPinned = room.isPinnedFor(currentUserId);
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 20, spreadRadius: 4),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: room.type == ChatRoomType.direct
-                    ? DirectUserAvatar(
-                        userId: otherUserId,
-                        fallbackName: displayName,
-                        fallbackPhotoUrl: room.photoUrl,
-                        radius: 20,
-                      )
-                    : AvatarWidget(
-                        photoUrl: room.photoUrl,
-                        name: displayName,
-                        radius: 20,
+              // Thanh kéo drag handle
+              Container(
+                width: 48,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Thẻ hồ sơ đối tượng (Profile Card Header Stitch UI)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F9FF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE0F2FE)),
+                ),
+                child: Row(
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        room.type == ChatRoomType.direct
+                            ? DirectUserAvatar(
+                                userId: otherUserId,
+                                fallbackName: displayName,
+                                fallbackPhotoUrl: room.photoUrl,
+                                radius: 24,
+                              )
+                            : AvatarWidget(
+                                photoUrl: room.photoUrl,
+                                name: displayName,
+                                radius: 24,
+                              ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15.5,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                room.type == ChatRoomType.direct
+                                    ? (loc.isVietnamese ? 'Đang hoạt động' : 'Active now')
+                                    : '${room.memberIds.length} ${loc.t('members_suffix')}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                subtitle: Text(
-                  room.type == ChatRoomType.direct ? loc.t('direct_chat') : '${room.memberIds.length} ${loc.t('members_suffix')}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                  ],
                 ),
               ),
-              const Divider(),
-              if (room.type == ChatRoomType.group)
-                ListTile(
-                  leading: const Icon(Icons.settings_outlined, color: Colors.blueAccent),
-                  title: Text(loc.t('group_settings')),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => GroupSettingsScreen(room: room)),
-                    );
-                  },
+              const SizedBox(height: 16),
+
+              // Danh sách hành động nhóm (Grouped Actions List)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFF1F5F9)),
                 ),
-              ListTile(
-                leading: const Icon(Icons.mark_chat_read_outlined, color: Colors.teal),
-                title: Text(loc.t('mark_read')),
-                onTap: () {
-                  Navigator.pop(ctx);
-                },
+                child: Column(
+                  children: [
+                    // 1. Đánh dấu đã đọc
+                    _buildSheetActionItem(
+                      icon: Icons.visibility_outlined,
+                      iconColor: const Color(0xFF0284C7),
+                      title: loc.isVietnamese ? 'Đánh dấu đã đọc' : 'Mark as read',
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc.isVietnamese ? 'Đã đánh dấu đã đọc cuộc trò chuyện' : 'Marked as read')),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 48, color: Color(0xFFE2E8F0)),
+
+                    // 2. Ghim / Bỏ ghim cuộc trò chuyện
+                    _buildSheetActionItem(
+                      icon: Icons.push_pin_outlined,
+                      iconColor: const Color(0xFFD97706),
+                      title: isPinned
+                          ? (loc.isVietnamese ? 'Bỏ ghim cuộc trò chuyện' : 'Unpin chat')
+                          : (loc.isVietnamese ? 'Ghim cuộc trò chuyện lên đầu' : 'Pin chat to top'),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await _chatService.togglePinRoom(room.id, currentUserId, !isPinned);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isPinned
+                                  ? (loc.isVietnamese ? 'Đã bỏ ghim cuộc trò chuyện' : 'Unpinned chat')
+                                  : (loc.isVietnamese ? 'Đã ghim cuộc trò chuyện lên đầu' : 'Pinned chat to top')),
+                              backgroundColor: const Color(0xFFD97706),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    const Divider(height: 1, indent: 48, color: Color(0xFFE2E8F0)),
+
+                    // 3. Tắt thông báo
+                    _buildSheetActionItem(
+                      icon: Icons.notifications_off_outlined,
+                      iconColor: const Color(0xFF64748B),
+                      title: loc.isVietnamese ? 'Tắt thông báo (Bật im lặng)' : 'Mute notifications',
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(loc.isVietnamese ? 'Đã tắt thông báo cho $displayName' : 'Muted notifications for $displayName')),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 48, color: Color(0xFFE2E8F0)),
+
+                    // 4. Cài đặt & Tùy chỉnh nhóm
+                    _buildSheetActionItem(
+                      icon: Icons.settings_outlined,
+                      iconColor: const Color(0xFF334155),
+                      title: room.type == ChatRoomType.group
+                          ? (loc.isVietnamese ? 'Cài đặt & Tùy chỉnh nhóm' : 'Chat & Group Settings')
+                          : (loc.isVietnamese ? 'Tùy chỉnh & Hình nền' : 'Wallpaper & Customization'),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        if (room.type == ChatRoomType.group) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => GroupSettingsScreen(room: room)),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => WallpaperPickerScreen(
+                                roomId: room.id,
+                                currentWallpaperType: room.wallpaperType ?? 'preset',
+                                currentWallpaperValue: room.wallpaperValue ?? 'default',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
-              ListTile(
-                leading: Icon(Icons.delete_forever, color: Colors.red.shade600),
-                title: Text(
-                  loc.t('delete_chat'),
-                  style: TextStyle(color: Colors.red.shade600, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(loc.t('confirm_delete_desc'), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              const SizedBox(height: 14),
+
+              // Nút xóa cuộc trò chuyện màu đỏ rộng toàn màn hình
+              InkWell(
                 onTap: () {
                   Navigator.pop(ctx);
                   _confirmDeleteConversation(context, room, currentUserId, displayName);
                 },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFFFE4E6)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.delete_outline_rounded, color: Color(0xFFE11D48), size: 19),
+                      const SizedBox(width: 8),
+                      Text(
+                        loc.isVietnamese
+                            ? 'Xóa cuộc trò chuyện (Không thể khôi phục)'
+                            : 'Delete conversation (Permanent)',
+                        style: const TextStyle(
+                          color: Color(0xFFE11D48),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetActionItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 18),
+          ],
         ),
       ),
     );
@@ -339,6 +555,16 @@ class _ChatListViewState extends State<ChatListView> {
                   if (_activeCategory == 'groups') return r.type == ChatRoomType.group;
                   return true;
                 }).toList();
+
+                filteredRooms.sort((a, b) {
+                  final aPinned = a.isPinnedFor(currentUser.uid);
+                  final bPinned = b.isPinnedFor(currentUser.uid);
+                  if (aPinned && !bPinned) return -1;
+                  if (!aPinned && bPinned) return 1;
+                  final aTime = a.lastMessageTime ?? a.createdAt;
+                  final bTime = b.lastMessageTime ?? b.createdAt;
+                  return bTime.compareTo(aTime);
+                });
 
                 return Column(
                   children: [
@@ -508,7 +734,7 @@ class _ChatListViewState extends State<ChatListView> {
 
                                 final isOwner = room.type == ChatRoomType.group && room.isOwner(currentUser.uid);
                                 final isDeputy = room.type == ChatRoomType.group && room.isDeputy(currentUser.uid);
-                                final isPinned = room.pinnedMessageId != null && room.pinnedMessageId!.isNotEmpty;
+                                final isPinned = room.isPinnedFor(currentUser.uid) || (room.pinnedMessageId != null && room.pinnedMessageId!.isNotEmpty);
 
                                 return Dismissible(
                                   key: ValueKey('room_${room.id}'),

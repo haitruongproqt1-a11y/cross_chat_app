@@ -428,6 +428,15 @@ class ChatService {
     }
   }
 
+  // Ghim hoặc bỏ ghim cuộc trò chuyện lên đầu danh sách (Stitch UI style)
+  Future<void> togglePinRoom(String roomId, String userId, bool pin) async {
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'pinnedUsers': pin
+          ? FieldValue.arrayUnion([userId])
+          : FieldValue.arrayRemove([userId]),
+    });
+  }
+
   // Tự rời nhóm (Bao gồm chuyển giao Key Trưởng nhóm bắt buộc hoặc chọn ngẫu nhiên)
   Future<void> leaveGroup({
     required String roomId,

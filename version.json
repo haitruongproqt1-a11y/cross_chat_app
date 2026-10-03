@@ -1,9 +1,9 @@
 {
-  "version": "1.0.22",
-  "build_number": 23,
+  "version": "1.0.23",
+  "build_number": 24,
   "release_date": "2026-10-03",
-  "changelog": "- Tích hợp toàn diện giao diện Google Stitch UI lên toàn bộ ứng dụng Mobile:\n- Thanh tiêu đề StitchHeaderBar: Logo KINI gradient với chấm ngọc online, huy hiệu v1.0.22, chứng nhận E2EE và hiển thị Key chính/Phó nhóm.\n- Thanh điều hướng đáy StitchBottomNavBar: Thiết kế phẳng thanh lịch, hiệu ứng phát sáng tab chọn, badge đếm tin nhắn và cờ Việt Nam.\n- Màn hình Danh bạ Stitch UI: Thêm 2 phím tắt Thêm bạn mới & Nhóm KINI CHAT, thẻ danh bạ bo góc hiện đại kèm nút gọi/nhắn tin nhanh.\n- Màn hình Nhật ký (Wall) Stitch UI: Ảnh bìa hoàng hôn Tây Hồ, card hồ sơ cá nhân đè ảnh bìa với huy hiệu Key chính 🔑 và thanh Đăng tin nhanh.\n- Tích hợp nút tạo nhóm mới nhanh trực tiếp trên thanh tìm kiếm tin nhắn.",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.22/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.22/update_v1.0.22.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.22/app-arm64-v8a-release.apk"
+  "changelog": "- Hoàn thiện 100% Google Stitch UI cho KINI CHAT Mobile:\n- ChatBottomSheet chuẩn Stitch 100%: Thanh drag handle bo tròn, thẻ hồ sơ đối tượng kèm chấm online ngọc bích, menu tác vụ nhóm (Đánh dấu đã đọc, Ghim/Bỏ ghim lên đầu, Tắt thông báo im lặng, Cài đặt nhóm/Hình nền) và nút Xóa cuộc trò chuyện rộng toàn màn hình.\n- Nâng cấp Ghim cuộc trò chuyện: Các cuộc trò chuyện được ghim sẽ tự động đưa lên đầu danh sách chat kèm biểu tượng Ghim Amber 45 độ.\n- Thao tác nhanh 3 chấm trên từng thẻ chat để mở trực tiếp Stitch Action Sheet.\n- Danh bạ chuẩn Stitch 100%: Tích hợp trực tiếp nút Gọi thoại (Audio) và Gọi video HD ngay trên từng thẻ liên hệ trong Danh bạ.\n- Giữ nguyên 100% logic nhắn tin E2EE, WebRTC audio/video call và chia sẻ màn hình an toàn tuyệt đối.",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/update_v1.0.23.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/app-arm64-v8a-release.apk"
 }
