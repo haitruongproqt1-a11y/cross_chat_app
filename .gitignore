@@ -50,3 +50,4 @@ app.*.map.json
 /dist_ota/
 /dist_pc/
 *.ps1
+stitch_full_featured_video_chat_app/

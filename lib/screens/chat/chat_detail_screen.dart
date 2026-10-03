@@ -15,6 +15,7 @@ import '../../widgets/avatar_widget.dart';
 import '../../models/user_model.dart';
 import '../wall/user_wall_screen.dart';
 import '../call/call_screen.dart';
+import '../call/screen_share_viewer_screen.dart';
 import '../tiktok/tiktok_viewer_screen.dart';
 import '../../models/wallpaper_model.dart';
 import '../../widgets/chat_wallpaper_widget.dart';
@@ -22,6 +23,7 @@ import 'bubble_theme_picker_screen.dart';
 import 'wallpaper_picker_screen.dart';
 import 'group_settings_screen.dart';
 import '../../services/localization_service.dart';
+import '../../utils/app_theme.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -40,6 +42,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final StorageService _storageService = StorageService();
   final LocationService _locationService = LocationService();
   bool _isUploading = false;
+  bool _showScreenShareAlert = true;
   MessageModel? _replyingToMessage;
 
   @override
@@ -495,6 +498,22 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 onPressed: _openTikTok,
               ),
               IconButton(
+                icon: const Icon(Icons.screen_share_outlined, color: AppTheme.primaryCyan),
+                tooltip: 'Chia sẻ màn hình',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScreenShareViewerScreen(
+                        remoteUserName: roomDisplayName,
+                        remoteUserAvatar: currentRoom.photoUrl,
+                        streamTitle: '$roomDisplayName • Live Stream 4K',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.call_outlined),
                 tooltip: loc.t('voice_call'),
                 onPressed: () => _startCall(CallType.audio),
@@ -696,6 +715,134 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             children: [
               if (_isUploading)
                 const LinearProgressIndicator(minHeight: 3),
+
+              // Pinned Screen Share Broadcast Notification (Cyber-Glass UI)
+              if (_showScreenShareAlert)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF171B26).withAlpha(240),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.primaryCyan.withAlpha(80), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryCyan.withAlpha(30),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryCyan.withAlpha(30),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.primaryCyan.withAlpha(90)),
+                        ),
+                        child: const Icon(Icons.screen_share, color: AppTheme.primaryCyan, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryCyan.withAlpha(40),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'TRỰC TIẾP 4K',
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.primaryCyan,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Figma Canvas',
+                                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '$roomDisplayName đang sẵn sàng chia sẻ màn hình',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ScreenShareViewerScreen(
+                                remoteUserName: roomDisplayName,
+                                remoteUserAvatar: currentRoom.photoUrl,
+                                streamTitle: '$roomDisplayName • Live Stream 4K',
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryCyan.withAlpha(80),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Xem ngay',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              SizedBox(width: 2),
+                              Icon(Icons.arrow_forward, size: 14, color: Colors.black),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => setState(() => _showScreenShareAlert = false),
+                        child: const Icon(Icons.close, size: 16, color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ),
 
               // Thanh ghim tin nhắn (Stitch UI style)
               if (currentRoom.pinnedMessageText != null && currentRoom.pinnedMessageText!.isNotEmpty)
@@ -954,59 +1101,192 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: theme.cardTheme.color,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        offset: const Offset(0, -1),
-                        blurRadius: 4,
-                      ),
-                    ],
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F131D),
+                    border: Border(top: BorderSide(color: Color(0xFF262A35), width: 1)),
                   ),
                   child: SafeArea(
-                    child: Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline),
-                          tooltip: loc.isVietnamese ? 'Đính kèm tệp, ảnh hoặc vị trí' : 'Attach file, image, or location',
-                          color: theme.colorScheme.primary,
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => MediaAttachmentSheet(
-                                onActionSelected: _handleAttachmentAction,
-                              ),
-                            );
-                          },
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _textController,
-                            textCapitalization: TextCapitalization.sentences,
-                            maxLines: 4,
-                            minLines: 1,
-                            decoration: InputDecoration(
-                              hintText: loc.t('type_message_hint'),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              filled: true,
-                            ),
-                            onSubmitted: (_) => _sendTextMessage(),
+                        // Smart Quick Action Chips Horizontal List (matching Stitch)
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          child: Row(
+                            children: [
+                              _buildQuickChip('👍 Tuyệt vời', onTap: () {
+                                _textController.text = 'Tuyệt vời! 👍';
+                              }),
+                              const SizedBox(width: 8),
+                              _buildQuickChip('🔥 Xem ngay', onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ScreenShareViewerScreen(
+                                      remoteUserName: roomDisplayName,
+                                      remoteUserAvatar: currentRoom.photoUrl,
+                                      streamTitle: '$roomDisplayName • Live Stream 4K',
+                                    ),
+                                  ),
+                                );
+                              }),
+                              const SizedBox(width: 8),
+                              _buildQuickChip('🎙 Bật Mic', icon: Icons.mic, isAccent: true, onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Micro đã bật sẵn sàng cho cuộc trò chuyện')),
+                                );
+                              }),
+                              const SizedBox(width: 8),
+                              _buildQuickChip('🖥 Chia sẻ màn hình', icon: Icons.screen_share, isAccent: true, onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ScreenShareViewerScreen(
+                                      remoteUserName: roomDisplayName,
+                                      remoteUserAvatar: currentRoom.photoUrl,
+                                      streamTitle: '$roomDisplayName • Live Stream 4K',
+                                    ),
+                                  ),
+                                );
+                              }),
+                              const SizedBox(width: 8),
+                              _buildQuickChip('🚀 Gửi phản hồi', onTap: () {
+                                _textController.text = 'Đã nhận và đang xem lại nhé! 🚀';
+                              }),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        CircleAvatar(
-                          backgroundColor: theme.colorScheme.primary,
-                          child: IconButton(
-                            icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                            tooltip: loc.isVietnamese ? 'Gửi' : 'Send',
-                            onPressed: _sendTextMessage,
+                        // Primary Input Bar
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
+                          child: Row(
+                            children: [
+                              // Attachment Sheet Button (+)
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1C1F2A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF313540)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.add, color: AppTheme.primaryCyan, size: 22),
+                                  tooltip: loc.isVietnamese ? 'Đính kèm tệp, ảnh hoặc vị trí' : 'Attach file, image, or location',
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (_) => MediaAttachmentSheet(
+                                        onActionSelected: _handleAttachmentAction,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Audio Mic button
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1C1F2A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF313540)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.mic, color: Color(0xFFB9CACB), size: 20),
+                                  tooltip: 'Ghi âm nhanh',
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Micro đã bật sẵn sàng cho tin nhắn thoại')),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Message Composer Input Box
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF171B26),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFF313540)),
+                                  ),
+                                  child: TextField(
+                                    controller: _textController,
+                                    textCapitalization: TextCapitalization.sentences,
+                                    maxLines: 4,
+                                    minLines: 1,
+                                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Nhập tin nhắn bảo mật mã hóa...',
+                                      hintStyle: TextStyle(color: Color(0xFF849495), fontSize: 13),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    onSubmitted: (_) => _sendTextMessage(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Quick Screen Share button
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1C1F2A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppTheme.primaryCyan.withAlpha(60)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.screen_share, color: AppTheme.primaryCyan, size: 20),
+                                  tooltip: 'Chia sẻ màn hình',
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ScreenShareViewerScreen(
+                                          remoteUserName: roomDisplayName,
+                                          remoteUserAvatar: currentRoom.photoUrl,
+                                          streamTitle: '$roomDisplayName • Live Stream 4K',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              // Glowing Send Button
+                              GestureDetector(
+                                onTap: _sendTextMessage,
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryCyan.withAlpha(90),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.send, color: Colors.black, size: 20),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -1021,5 +1301,40 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   },
 );
+  }
+
+  Widget _buildQuickChip(String label, {IconData? icon, bool isAccent = false, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isAccent ? AppTheme.primaryCyan.withAlpha(35) : const Color(0xFF1C1F2A),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isAccent ? AppTheme.primaryCyan.withAlpha(100) : const Color(0xFF313540),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: isAccent ? AppTheme.primaryCyan : Colors.white70),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isAccent ? FontWeight.bold : FontWeight.w500,
+                color: isAccent ? AppTheme.primaryCyan : const Color(0xFFDFE2F1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

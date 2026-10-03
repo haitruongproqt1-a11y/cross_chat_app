@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
+import '../utils/app_theme.dart';
 
 class StitchBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -19,60 +20,54 @@ class StitchBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = Provider.of<LocalizationService>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final items = [
       _NavItem(
         icon: Icons.chat_bubble_outline_rounded,
         activeIcon: Icons.chat_bubble_rounded,
-        label: loc.t('tab_messages'),
+        label: loc.isVietnamese ? 'Đoạn chat' : 'Chats',
         badgeCount: unreadChatsCount > 0 ? unreadChatsCount : null,
       ),
       _NavItem(
-        icon: Icons.people_outline_rounded,
-        activeIcon: Icons.people_rounded,
-        label: loc.t('tab_contacts'),
+        icon: Icons.call_outlined,
+        activeIcon: Icons.call_rounded,
+        label: loc.isVietnamese ? 'Cuộc gọi' : 'Calls',
       ),
       _NavItem(
-        icon: Icons.radar_outlined,
-        activeIcon: Icons.radar_rounded,
-        label: loc.t('tab_nearby'),
-      ),
-      _NavItem(
-        icon: Icons.newspaper_outlined,
-        activeIcon: Icons.newspaper_rounded,
-        label: loc.t('tab_wall'),
+        icon: Icons.hub_outlined,
+        activeIcon: Icons.hub_rounded,
+        label: loc.isVietnamese ? 'Khám phá' : 'Explore',
         hasDot: hasDiaryUpdate,
       ),
       _NavItem(
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings_rounded,
-        label: loc.t('tab_settings'),
+        label: loc.isVietnamese ? 'Cài đặt' : 'Settings',
         hasFlag: true,
       ),
     ];
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A).withAlpha(245) : Colors.white.withAlpha(250),
-        border: Border(
+        color: AppTheme.surfaceContainerLowest.withAlpha(240),
+        border: const Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            color: Color(0x1AFFFFFF),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 50 : 15),
-            blurRadius: 16,
-            offset: const Offset(0, -3),
+            color: Colors.black.withAlpha(120),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (index) {
@@ -83,7 +78,7 @@ class StitchBottomNavBar extends StatelessWidget {
                 child: InkWell(
                   onTap: () => onTap(index),
                   borderRadius: BorderRadius.circular(16),
-                  splashColor: const Color(0xFF0284C7).withAlpha(30),
+                  splashColor: AppTheme.primaryCyan.withAlpha(30),
                   highlightColor: Colors.transparent,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -95,37 +90,40 @@ class StitchBottomNavBar extends StatelessWidget {
                           children: [
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(5),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFF0284C7).withAlpha(isDark ? 40 : 25)
+                                    ? AppTheme.primaryCyan.withAlpha(30)
                                     : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(14),
                               ),
                               child: Icon(
                                 isActive ? item.activeIcon : item.icon,
                                 size: 22,
                                 color: isActive
-                                    ? const Color(0xFF0284C7)
-                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                    ? AppTheme.primaryCyan
+                                    : AppTheme.onSurfaceVariant,
                               ),
                             ),
                             // Badge đếm số tin chưa đọc
                             if (item.badgeCount != null)
                               Positioned(
-                                right: -4,
+                                right: -2,
                                 top: -2,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0284C7),
+                                    color: AppTheme.secondaryViolet,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                      color: AppTheme.surfaceDark,
                                       width: 1.5,
                                     ),
-                                    boxShadow: const [
-                                      BoxShadow(color: Colors.black26, blurRadius: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.secondaryViolet.withAlpha(150),
+                                        blurRadius: 6,
+                                      ),
                                     ],
                                   ),
                                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -133,7 +131,7 @@ class StitchBottomNavBar extends StatelessWidget {
                                     '${item.badgeCount}',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 10,
+                                      fontSize: 9.5,
                                       fontWeight: FontWeight.bold,
                                       height: 1,
                                     ),
@@ -144,25 +142,31 @@ class StitchBottomNavBar extends StatelessWidget {
                             // Dấu chấm đỏ thông báo nhật ký
                             if (item.hasDot && item.badgeCount == null)
                               Positioned(
-                                right: 0,
+                                right: 6,
                                 top: 0,
                                 child: Container(
                                   width: 8,
                                   height: 8,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF43F5E),
+                                    color: AppTheme.tertiaryMagenta,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                      color: AppTheme.surfaceDark,
                                       width: 1.5,
                                     ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.tertiaryMagenta.withAlpha(160),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             // Cờ Việt Nam ở tab Cài đặt
                             if (item.hasFlag)
                               const Positioned(
-                                right: -4,
+                                right: 0,
                                 bottom: -2,
                                 child: Text('🇻🇳', style: TextStyle(fontSize: 10)),
                               ),
@@ -175,8 +179,9 @@ class StitchBottomNavBar extends StatelessWidget {
                             fontSize: 11,
                             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                             color: isActive
-                                ? const Color(0xFF0284C7)
-                                : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                ? AppTheme.primaryCyan
+                                : AppTheme.onSurfaceVariant,
+                            letterSpacing: isActive ? 0.2 : 0,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

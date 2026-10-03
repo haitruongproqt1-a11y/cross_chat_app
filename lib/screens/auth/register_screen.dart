@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
+import '../../utils/app_theme.dart';
 import '../../widgets/kini_logo_widget.dart';
 import '../../widgets/security_question_picker_sheet.dart';
 
@@ -73,16 +74,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.surfaceDark,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppTheme.primaryCyan),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -96,9 +95,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo KINI chuẩn
+                  // Logo KINI chuẩn Vibrant Cyber-Glass
                   const Center(
-                    child: KiniLogoWidget(size: 72, showText: true),
+                    child: KiniLogoWidget(size: 76, showText: true),
                   ),
                   const SizedBox(height: 24),
 
@@ -109,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -118,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13.5,
-                      color: Color(0xFF64748B),
+                      color: AppTheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                   ),
@@ -127,6 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // 1. Tên đăng nhập
                   _buildFieldLabel('Tên đăng nhập'),
                   TextFormField(
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                     controller: _usernameController,
                     decoration: _inputDecoration(
                       hintText: 'Chỉ chữ, số, chấm, gạch dưới hoặc ngang',
@@ -146,6 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // 2. Mật khẩu
                   _buildFieldLabel('Mật khẩu'),
                   TextFormField(
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: _inputDecoration(
@@ -153,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: const Color(0xFF94A3B8),
+                          color: AppTheme.outline,
                         ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
@@ -170,6 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // 3. Tên tài khoản
                   _buildFieldLabel('Tên tài khoản'),
                   TextFormField(
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                     controller: _displayNameController,
                     decoration: _inputDecoration(
                       hintText: 'Tên hiển thị với bạn bè',
@@ -191,9 +193,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppTheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: AppTheme.outlineVariant),
                       ),
                       child: Row(
                         children: [
@@ -202,14 +204,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _selectedSecurityQuestion,
                               style: const TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF0F172A),
+                                color: AppTheme.onSurface,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF0284C7)),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.primaryCyan),
                         ],
                       ),
                     ),
@@ -219,6 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // 5. Câu trả lời bảo mật
                   _buildFieldLabel('Câu trả lời bảo mật'),
                   TextFormField(
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                     controller: _securityAnswerController,
                     decoration: _inputDecoration(
                       hintText: 'Ghi nhớ chính xác câu trả lời',
@@ -232,26 +235,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Nút Tạo tài khoản
-                  SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: auth.isLoading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  // Nút Tạo tài khoản Cyber-Glass
+                  GestureDetector(
+                    onTap: auth.isLoading ? null : _submit,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryCyan.withAlpha(90),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
+                      alignment: Alignment.center,
                       child: auth.isLoading
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                             )
                           : const Text(
                               'Tạo tài khoản',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                             ),
                     ),
                   ),
@@ -262,14 +273,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: RichText(
-                        text: TextSpan(
+                        text: const TextSpan(
                           text: 'Đã có tài khoản? ',
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                          style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 14),
                           children: [
                             TextSpan(
                               text: 'Đăng nhập',
                               style: TextStyle(
-                                color: primaryColor,
+                                color: AppTheme.primaryCyan,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -296,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: const TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF0F172A),
+          color: AppTheme.onSurface,
         ),
       ),
     );
@@ -305,22 +316,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+      hintStyle: const TextStyle(color: AppTheme.outline, fontSize: 13.5),
       filled: true,
-      fillColor: const Color(0xFFF8FAFC),
+      fillColor: AppTheme.surfaceContainerLowest,
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: const BorderSide(color: AppTheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: const BorderSide(color: AppTheme.outlineVariant),
       ),
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(14)),
-        borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5),
+        borderSide: BorderSide(color: AppTheme.primaryCyan, width: 1.5),
       ),
     );
   }

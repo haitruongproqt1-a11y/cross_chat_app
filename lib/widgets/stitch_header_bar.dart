@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/localization_service.dart';
-import '../utils/constants.dart';
+import '../utils/app_theme.dart';
 import '../widgets/avatar_widget.dart';
 
 class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
   final String? customTitle;
+  final String? subTitle;
   final VoidCallback? onBrandTap;
   final VoidCallback? onRadarTap;
   final VoidCallback? onDiaryTap;
@@ -16,6 +17,7 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
   const StitchHeaderBar({
     super.key,
     this.customTitle,
+    this.subTitle,
     this.onBrandTap,
     this.onRadarTap,
     this.onDiaryTap,
@@ -30,21 +32,22 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: const Color(0xFFFEF3C7).withAlpha(30),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.vpn_key, color: Color(0xFFB45309), size: 22),
+              child: const Icon(Icons.vpn_key, color: Color(0xFFFCD34D), size: 22),
             ),
             const SizedBox(width: 10),
             Text(
               loc.isVietnamese ? 'Chức Danh E2EE' : 'E2EE Role & Keys',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white),
             ),
           ],
         ),
@@ -55,25 +58,25 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: AppTheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0x22FFFFFF)),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Text('🔑 Key chính', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
+                      const Text('🔑 Key chính', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFCD34D))),
                       const Spacer(),
-                      Text(loc.isVietnamese ? 'Trưởng nhóm' : 'Group Owner', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      Text(loc.isVietnamese ? 'Trưởng nhóm' : 'Group Owner', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTheme.onSurface)),
                     ],
                   ),
-                  const Divider(height: 16),
+                  const Divider(height: 16, color: Color(0x22FFFFFF)),
                   Row(
                     children: [
-                      const Text('🛡️ Phó nhóm', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                      const Text('🛡️ Phó nhóm', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryCyan)),
                       const Spacer(),
-                      Text(loc.isVietnamese ? 'Tối đa 10 Key phụ' : 'Up to 10 Deputies', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      Text(loc.isVietnamese ? 'Tối đa 10 Key phụ' : 'Up to 10 Deputies', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppTheme.onSurface)),
                     ],
                   ),
                 ],
@@ -84,15 +87,15 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
               loc.isVietnamese
                   ? 'Mã khóa E2EE phân quyền được bảo vệ bằng mật mã Argon2id. Chỉ Trưởng nhóm mới có quyền chỉ định Phó nhóm hoặc bàn giao quyền sở hữu.'
                   : 'Role-based E2EE permissions are secured by Argon2id cryptography. Only group owners can appoint deputies or transfer group ownership.',
-              style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.4),
+              style: const TextStyle(fontSize: 12.5, color: AppTheme.onSurfaceVariant, height: 1.4),
             ),
           ],
         ),
         actions: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              foregroundColor: Colors.white,
+              backgroundColor: AppTheme.primaryCyan,
+              foregroundColor: Colors.black,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx),
@@ -108,84 +111,79 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     final auth = Provider.of<AuthProvider>(context);
     final user = auth.currentUser;
     final loc = Provider.of<LocalizationService>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final title = customTitle ?? AppConstants.appName;
 
     return Container(
       height: preferredSize.height + MediaQuery.of(context).padding.top,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top,
-        left: 10,
-        right: 10,
+        left: 12,
+        right: 12,
       ),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A).withAlpha(245) : const Color(0xFFF8FAFC).withAlpha(250),
-        border: Border(
+        color: AppTheme.surfaceDark.withAlpha(245),
+        border: const Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+            color: Color(0x1AFFFFFF),
             width: 1,
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(100),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // Logo KINI & Status
+          // Logo KINI & Brand Title
           InkWell(
             onTap: onBrandTap,
             borderRadius: BorderRadius.circular(12),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
+                  // Unified Registration Screen Logo with Cyan Glow Halo
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryCyan.withAlpha(120),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/images/kini_logo.png',
                         width: 36,
                         height: 36,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0284C7), Color(0xFF38BDF8)],
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0284C7).withAlpha(80),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.chat_bubble_rounded,
-                          color: Colors.white,
-                          size: 19,
-                        ),
-                      ),
-                      // Emerald active dot
-                      Positioned(
-                        bottom: -1,
-                        right: -1,
-                        child: Container(
-                          width: 11,
-                          height: 11,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                              width: 2,
+                            child: const Center(
+                              child: Text('K', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 9),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,50 +191,35 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            title,
+                          const Text(
+                            'KiniChat',
                             style: TextStyle(
-                              fontSize: 14.5,
+                              fontSize: 16,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: AppTheme.primaryCyan,
                               letterSpacing: -0.3,
                             ),
                           ),
                           const SizedBox(width: 5),
+                          // Live pulsating indicator beacon
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0284C7).withAlpha(20),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: const Color(0xFF0284C7).withAlpha(50),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: const Text(
-                              'v${AppConstants.appVersion}',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0284C7),
-                              ),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryCyan,
+                              shape: BoxShape.circle,
                             ),
                           ),
                         ],
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.verified_user_rounded, size: 10, color: Color(0xFF10B981)),
-                          const SizedBox(width: 3),
-                          Text(
-                            loc.isVietnamese ? 'Đã kết nối bảo mật' : 'E2EE Secured',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        subTitle ?? customTitle ?? (loc.isVietnamese ? 'ĐOẠN CHAT' : 'CHATS'),
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -251,49 +234,49 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Role Badge Pill (Interactive)
+              // E2EE Role Key Pill
               InkWell(
                 onTap: () => _showRoleInfoDialog(context, loc),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                    color: const Color(0xFFFEF3C7).withAlpha(20),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFCD34D), width: 1),
+                    border: Border.all(color: const Color(0xFFFCD34D).withAlpha(120), width: 1),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '🔑 Key chính',
+                        '🔑 Key E2EE',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFB45309),
+                          color: Color(0xFFFCD34D),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: 4),
 
-              // Radar quick button
+              // Radar action button
               if (onRadarTap != null)
                 IconButton(
-                  icon: const Icon(Icons.radar_rounded, size: 19, color: Color(0xFF0284C7)),
-                  tooltip: 'Quanh đây (Radar)',
+                  icon: const Icon(Icons.radar_rounded, size: 20, color: AppTheme.primaryCyan),
+                  tooltip: 'Tìm bạn quanh đây (Radar)',
                   onPressed: onRadarTap,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
 
-              // Diary / Post quick button
+              // Diary / Wall quick button
               if (onDiaryTap != null)
                 IconButton(
-                  icon: const Icon(Icons.edit_note_rounded, size: 21, color: Color(0xFF475569)),
-                  tooltip: 'Đăng Nhật ký',
+                  icon: const Icon(Icons.edit_note_rounded, size: 22, color: AppTheme.violetLight),
+                  tooltip: 'Nhật ký & Trạng thái',
                   onPressed: onDiaryTap,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -307,9 +290,10 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(7),
+                      border: Border.all(color: AppTheme.tertiaryMagenta.withAlpha(180), width: 1),
                       boxShadow: const [
                         BoxShadow(color: Color(0x5500F2FE), offset: Offset(-1, -1), blurRadius: 2),
-                        BoxShadow(color: Color(0x55FE0979), offset: Offset(1, 1), blurRadius: 2),
+                        BoxShadow(color: Color(0x55FF007A), offset: Offset(1, 1), blurRadius: 2),
                       ],
                     ),
                     child: const Icon(Icons.music_note, color: Colors.white, size: 13),
@@ -320,9 +304,9 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
 
-              const SizedBox(width: 2),
+              const SizedBox(width: 4),
 
-              // User Avatar with emerald status dot
+              // User Avatar with glowing status dot
               if (user != null)
                 InkWell(
                   onTap: onSettingsTap,
@@ -344,12 +328,18 @@ class StitchHeaderBar extends StatelessWidget implements PreferredSizeWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
+                              color: AppTheme.primaryCyan,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                color: AppTheme.surfaceDark,
                                 width: 1.5,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryCyan.withAlpha(180),
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
                           ),
                         ),

@@ -8,14 +8,13 @@ import '../../models/call_model.dart';
 import '../../widgets/responsive_layout.dart';
 import '../chat/chat_detail_screen.dart';
 import '../call/call_screen.dart';
-import '../nearby/nearby_friends_screen.dart';
-import '../wall/user_wall_screen.dart';
 import '../../services/call_sound_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/ota_update_service.dart';
 import '../../services/localization_service.dart';
 import 'chat_list_view.dart';
-import 'contacts_view.dart';
+import 'calls_view.dart';
+import 'explore_hub_view.dart';
 import 'settings_view.dart';
 import '../../widgets/stitch_header_bar.dart';
 import '../../widgets/stitch_bottom_nav_bar.dart';
@@ -38,9 +37,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   late final List<Widget> _views = [
     const ChatListView(embeddedInHomeScreen: true),
-    const ContactsView(embeddedInHomeScreen: true),
-    const NearbyFriendsScreen(embeddedInHomeScreen: true),
-    const UserWallScreen(embeddedInHomeScreen: true),
+    const CallsView(embeddedInHomeScreen: true),
+    const ExploreHubView(embeddedInHomeScreen: true),
     const SettingsView(embeddedInHomeScreen: true),
   ];
 
@@ -297,31 +295,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildMobileLayout() {
     final loc = Provider.of<LocalizationService>(context);
 
-    String headerTitle = 'KINI CHAT';
+    String subHeader = 'ĐOẠN CHAT';
     switch (_currentIndex) {
       case 1:
-        headerTitle = loc.isVietnamese ? 'KINI CHAT Danh Bạ' : 'KINI CHAT Contacts';
+        subHeader = loc.isVietnamese ? 'CUỘC GỌI' : 'CALLS';
         break;
       case 2:
-        headerTitle = loc.isVietnamese ? 'KINI CHAT Quanh Đây' : 'KINI CHAT Radar';
+        subHeader = loc.isVietnamese ? 'KHÁM PHÁ' : 'EXPLORE';
         break;
       case 3:
-        headerTitle = loc.isVietnamese ? 'KINI CHAT Nhật Ký' : 'KINI CHAT Wall';
-        break;
-      case 4:
-        headerTitle = loc.isVietnamese ? 'KINI CHAT Cài Đặt' : 'KINI CHAT Settings';
+        subHeader = loc.isVietnamese ? 'CÀI ĐẶT' : 'SETTINGS';
         break;
       default:
-        headerTitle = 'KINI CHAT';
+        subHeader = loc.isVietnamese ? 'ĐOẠN CHAT' : 'CHATS';
     }
 
     return Scaffold(
       appBar: StitchHeaderBar(
-        customTitle: headerTitle,
+        subTitle: subHeader,
         onBrandTap: () => setState(() => _currentIndex = 0),
         onRadarTap: () => setState(() => _currentIndex = 2),
-        onDiaryTap: () => setState(() => _currentIndex = 3),
-        onSettingsTap: () => setState(() => _currentIndex = 4),
+        onDiaryTap: () => setState(() => _currentIndex = 2),
+        onSettingsTap: () => setState(() => _currentIndex = 3),
         onTikTokTap: () {
           Navigator.push(
             context,

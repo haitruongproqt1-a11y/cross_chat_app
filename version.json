@@ -1,9 +1,9 @@
 {
-  "version": "1.0.23",
-  "build_number": 24,
+  "version": "1.0.24",
+  "build_number": 25,
   "release_date": "2026-10-03",
-  "changelog": "- Hoàn thiện 100% Google Stitch UI cho KINI CHAT Mobile:\n- ChatBottomSheet chuẩn Stitch 100%: Thanh drag handle bo tròn, thẻ hồ sơ đối tượng kèm chấm online ngọc bích, menu tác vụ nhóm (Đánh dấu đã đọc, Ghim/Bỏ ghim lên đầu, Tắt thông báo im lặng, Cài đặt nhóm/Hình nền) và nút Xóa cuộc trò chuyện rộng toàn màn hình.\n- Nâng cấp Ghim cuộc trò chuyện: Các cuộc trò chuyện được ghim sẽ tự động đưa lên đầu danh sách chat kèm biểu tượng Ghim Amber 45 độ.\n- Thao tác nhanh 3 chấm trên từng thẻ chat để mở trực tiếp Stitch Action Sheet.\n- Danh bạ chuẩn Stitch 100%: Tích hợp trực tiếp nút Gọi thoại (Audio) và Gọi video HD ngay trên từng thẻ liên hệ trong Danh bạ.\n- Giữ nguyên 100% logic nhắn tin E2EE, WebRTC audio/video call và chia sẻ màn hình an toàn tuyệt đối.",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/update_v1.0.23.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.23/app-arm64-v8a-release.apk"
+  "changelog": "- Chuyển đổi toàn diện sang bộ giao diện Stitch Vibrant Cyber-Glass (Midnight Obsidian + Electric Cyan #00F2FE + Deep Violet #7928CA):\n- Thống nhất logo thương hiệu KiniChat chuẩn nét neon đồng bộ 100% trên toàn bộ các màn hình (Đăng ký, Đăng nhập, Header chính, Thanh điều hướng, Trò chuyện).\n- Bổ sung màn hình và tab Cuộc gọi & Tạo phòng họp nhanh (CallsView) chuẩn Stitch: thẻ P2P Ultra Stream ambient card, tạo link họp nhanh kinichat.me, lưới tác vụ nhanh, lịch sử cuộc gọi và phiên Screen Share.\n- Bổ sung trải nghiệm Chia sẻ màn hình 1:1 độc lập (ScreenShareViewerScreen): hiển thị luồng trực tiếp 1080p 60fps, PiP webcam avatar nổi, bong bóng thả cảm xúc bay và thanh điều khiển kính mờ (Mic, Camera, Toàn màn hình).\n- Tích hợp Sticky Screen Share Alert card ghim đầu cuộc trò chuyện và dock soạn thảo thông minh với các chip phản hồi nhanh.\n- Tích hợp Tab Khám phá (ExploreHubView) gom trọn Radar quét bạn bè quanh đây, Tường nhà cá nhân/Nhật ký và TikTok Live.\n- Nâng cấp giao diện Đăng nhập & Đăng ký sang nền Cyber Obsidian huyền bí với các hiệu ứng hào quang ánh sáng rực rỡ.\n- Giữ nguyên 100% bảo mật logic nhắn tin E2EE, cơ chế gọi WebRTC và truyền tải dữ liệu an toàn.",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/update_v1.0.24.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/app-arm64-v8a-release.apk"
 }

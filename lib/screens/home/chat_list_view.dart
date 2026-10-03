@@ -4,6 +4,7 @@ import '../../models/chat_room_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../services/chat_service.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/constants.dart';
 import '../../widgets/avatar_widget.dart';
 import '../../widgets/responsive_layout.dart';
@@ -12,6 +13,9 @@ import '../chat/create_group_screen.dart';
 import '../chat/group_settings_screen.dart';
 import '../chat/wallpaper_picker_screen.dart';
 import '../tiktok/tiktok_viewer_screen.dart';
+import '../call/call_screen.dart';
+import '../call/screen_share_viewer_screen.dart';
+import '../../models/call_model.dart';
 import '../../services/localization_service.dart';
 
 class ChatListView extends StatefulWidget {
@@ -32,7 +36,8 @@ class _ChatListViewState extends State<ChatListView> {
   final TextEditingController _searchController = TextEditingController();
   final ChatService _chatService = ChatService();
   String _searchQuery = '';
-  String _activeCategory = 'all'; // 'all', 'unread', 'groups'
+  String _activeCategory = 'all'; // 'all', 'unread', 'groups', 'liveshare'
+  bool _isFabOpen = false;
 
   @override
   void dispose() {
@@ -425,7 +430,6 @@ class _ChatListViewState extends State<ChatListView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: widget.embeddedInHomeScreen
           ? null
           : AppBar(
@@ -464,9 +468,10 @@ class _ChatListViewState extends State<ChatListView> {
                 ),
               ],
             ),
+      backgroundColor: AppTheme.surfaceDark,
       body: Column(
         children: [
-          // Khung tìm kiếm Stitch UI
+          // Khung tìm kiếm Stitch Cyber-Glass UI
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -474,29 +479,47 @@ class _ChatListViewState extends State<ChatListView> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      color: AppTheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0x1FFFFFFF)),
                     ),
                     child: TextField(
                       controller: _searchController,
-                      style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontSize: 13.5, color: Colors.white),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: loc.t('search_chat_hint'),
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                        hintText: 'Tìm kiếm tin nhắn, bạn bè, nhóm...',
+                        hintStyle: const TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
+                        prefixIcon: const Icon(Icons.search, size: 19, color: AppTheme.onSurfaceVariant),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 16),
+                                icon: const Icon(Icons.clear, size: 16, color: Colors.white70),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() => _searchQuery = '');
                                 },
                               )
-                            : const Padding(
-                                padding: EdgeInsets.only(right: 8),
-                                child: Icon(Icons.tune_rounded, size: 18, color: Color(0xFF94A3B8)),
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.mic, size: 18, color: AppTheme.onSurfaceVariant),
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Tính năng tìm kiếm bằng giọng nói đã sẵn sàng')),
+                                      );
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.tune, size: 18, color: AppTheme.onSurfaceVariant),
+                                    onPressed: () {},
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
                               ),
                         border: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -516,16 +539,16 @@ class _ChatListViewState extends State<ChatListView> {
                         MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
                       );
                     },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0284C7).withAlpha(20),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF0284C7).withAlpha(40)),
+                        color: AppTheme.secondaryViolet.withAlpha(30),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.secondaryViolet.withAlpha(80)),
                       ),
-                      child: const Icon(Icons.group_add_outlined, color: Color(0xFF0284C7), size: 20),
+                      child: const Icon(Icons.group_add_outlined, color: AppTheme.violetLight, size: 21),
                     ),
                   ),
                 ],
@@ -576,47 +599,94 @@ class _ChatListViewState extends State<ChatListView> {
                         child: Row(
                           children: [
                             _buildCategoryChip(
-                              label: loc.t('all_filter'),
-                              count: null,
+                              label: 'Tất cả',
+                              count: rooms.length,
                               isSelected: _activeCategory == 'all',
                               onTap: () => setState(() => _activeCategory = 'all'),
                             ),
                             const SizedBox(width: 8),
                             _buildCategoryChip(
-                              label: loc.t('unread_filter'),
+                              label: 'Chưa đọc',
                               count: unreadTotal,
+                              isError: true,
                               isSelected: _activeCategory == 'unread',
                               onTap: () => setState(() => _activeCategory = 'unread'),
                             ),
                             const SizedBox(width: 8),
                             _buildCategoryChip(
-                              label: loc.t('groups_filter'),
+                              label: 'Nhóm & Kênh',
                               count: groupsTotal,
                               isSelected: _activeCategory == 'groups',
                               onTap: () => setState(() => _activeCategory = 'groups'),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildCategoryChip(
+                              label: 'Đang Live Share',
+                              count: 3,
+                              hasLiveDot: true,
+                              isSelected: _activeCategory == 'liveshare',
+                              onTap: () => setState(() => _activeCategory = 'liveshare'),
                             ),
                           ],
                         ),
                       ),
                     ),
 
-                    // Story Carousel Row
-                    Container(
-                      height: 84,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+                    // Không gian trực tiếp & Story Orbit Strip
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Không gian trực tiếp',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.primaryCyan,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Text(
+                            'XEM TẤT CẢ',
+                            style: TextStyle(
+                              color: AppTheme.primaryCyan,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+
+                    // Orbit Story Carousel Row
+                    Container(
+                      height: 92,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         children: [
-                          // Add Story Button
+                          // Tin của bạn / Create Story Button
                           InkWell(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(36),
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(loc.isVietnamese ? 'Tạo tin mới vào Nhật ký' : 'Create new moment on Wall')),
+                                const SnackBar(content: Text('Tạo tin mới vào Không gian trực tiếp')),
                               );
                             },
                             child: Padding(
@@ -624,20 +694,213 @@ class _ChatListViewState extends State<ChatListView> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(0xFFF1F5F9),
-                                      border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
-                                    ),
-                                    child: const Icon(Icons.add, color: Color(0xFF0284C7), size: 22),
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        width: 52,
+                                        height: 52,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppTheme.surfaceContainerHigh,
+                                          border: Border.all(color: const Color(0x33FFFFFF)),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            currentUser.displayName.isNotEmpty
+                                                ? currentUser.displayName[0].toUpperCase()
+                                                : 'U',
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          width: 18,
+                                          height: 18,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                                            ),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: AppTheme.surfaceDark, width: 2),
+                                          ),
+                                          child: const Icon(Icons.add, color: Colors.white, size: 12),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    loc.t('add_story'),
-                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                                  const SizedBox(height: 5),
+                                  const Text(
+                                    'Tin của bạn',
+                                    style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Live Screen Sharing Friend (Minh Quân)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(36),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ScreenShareViewerScreen(
+                                    remoteUserName: 'Minh Quân',
+                                    streamTitle: 'Cyberpunk Gameplay 4K 60FPS',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Container(
+                                        width: 52,
+                                        height: 52,
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: const LinearGradient(
+                                            colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet, AppTheme.tertiaryMagenta],
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppTheme.primaryCyan.withAlpha(100),
+                                              blurRadius: 8,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.surfaceDark,
+                                          ),
+                                          child: const Center(
+                                            child: Icon(Icons.screen_share, color: AppTheme.primaryCyan, size: 22),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: -3,
+                                        left: 4,
+                                        right: 4,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.surfaceContainerLowest,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: AppTheme.primaryCyan.withAlpha(150), width: 0.8),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'SHARE',
+                                                style: TextStyle(
+                                                  color: AppTheme.primaryCyan,
+                                                  fontSize: 8,
+                                                  fontWeight: FontWeight.w900,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'Minh Quân',
+                                    style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Live Voice Room Friend (Hương Ly)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(36),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CallScreen(
+                                    callId: 'call_voice_${DateTime.now().millisecondsSinceEpoch}',
+                                    remoteUserName: 'Hương Ly',
+                                    callType: CallType.audio,
+                                    isCaller: true,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Container(
+                                        width: 52,
+                                        height: 52,
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            colors: [AppTheme.secondaryViolet, AppTheme.primaryCyan],
+                                          ),
+                                        ),
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.surfaceDark,
+                                          ),
+                                          child: const Center(
+                                            child: Icon(Icons.graphic_eq, color: AppTheme.violetLight, size: 22),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: -3,
+                                        left: 6,
+                                        right: 6,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.violetContainer,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Center(
+                                            child: Text(
+                                              'VOICE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'Hương Ly',
+                                    style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -649,39 +912,61 @@ class _ChatListViewState extends State<ChatListView> {
                             final dName = r.getDisplayName(currentUser.uid);
                             final isUnread = r.unreadCount > 0;
                             return InkWell(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(36),
                               onTap: () => _openChat(r),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 6),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: isUnread
-                                            ? const LinearGradient(
-                                                colors: [Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFF6366F1)],
-                                              )
-                                            : null,
-                                        border: isUnread ? null : Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-                                      ),
-                                      child: AvatarWidget(
-                                        photoUrl: r.photoUrl,
-                                        name: dName,
-                                        radius: 20,
-                                      ),
+                                    Stack(
+                                      children: [
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: isUnread
+                                                ? const LinearGradient(
+                                                    colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                                                  )
+                                                : null,
+                                            border: isUnread ? null : Border.all(color: const Color(0x33FFFFFF), width: 1.5),
+                                          ),
+                                          child: AvatarWidget(
+                                            photoUrl: r.photoUrl,
+                                            name: dName,
+                                            radius: 23,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 1,
+                                          right: 1,
+                                          child: Container(
+                                            width: 11,
+                                            height: 11,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.primaryCyan,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: AppTheme.surfaceDark, width: 2),
+                                              boxShadow: [
+                                                BoxShadow(color: AppTheme.primaryCyan.withAlpha(180), blurRadius: 4),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 5),
                                     SizedBox(
-                                      width: 54,
+                                      width: 56,
                                       child: Text(
                                         dName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                                        style: const TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant, fontWeight: FontWeight.w600),
                                       ),
                                     ),
                                   ],
@@ -721,8 +1006,9 @@ class _ChatListViewState extends State<ChatListView> {
                               ),
                             )
                           : ListView.separated(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                               itemCount: filteredRooms.length,
-                              separatorBuilder: (_, __) => const Divider(indent: 72, height: 1, color: Color(0xFFF1F5F9)),
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 final room = filteredRooms[index];
                                 final isSelected = chatProvider.activeRoom?.id == room.id;
@@ -734,13 +1020,16 @@ class _ChatListViewState extends State<ChatListView> {
 
                                 final isOwner = room.type == ChatRoomType.group && room.isOwner(currentUser.uid);
                                 final isDeputy = room.type == ChatRoomType.group && room.isDeputy(currentUser.uid);
-                                final isPinned = room.isPinnedFor(currentUser.uid) || (room.pinnedMessageId != null && room.pinnedMessageId!.isNotEmpty);
+                                final hasUnread = room.unreadCount > 0;
 
                                 return Dismissible(
                                   key: ValueKey('room_${room.id}'),
                                   direction: DismissDirection.endToStart,
                                   background: Container(
-                                    color: Colors.red.shade600,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade600,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                     alignment: Alignment.centerRight,
                                     padding: const EdgeInsets.symmetric(horizontal: 24),
                                     child: Row(
@@ -763,132 +1052,203 @@ class _ChatListViewState extends State<ChatListView> {
                                   confirmDismiss: (direction) async {
                                     return await _confirmDeleteConversation(context, room, currentUser.uid, displayName);
                                   },
-                                  child: ListTile(
-                                    selected: isSelected,
-                                    selectedTileColor: Theme.of(context).colorScheme.primary.withAlpha(20),
-                                    leading: room.type == ChatRoomType.direct
-                                        ? DirectUserAvatar(
-                                            userId: otherUserId,
-                                            fallbackName: displayName,
-                                            fallbackPhotoUrl: room.photoUrl,
-                                            radius: 24,
-                                            showBadge: true,
-                                          )
-                                        : AvatarWidget(
-                                            photoUrl: room.photoUrl,
-                                            name: displayName,
-                                            radius: 24,
-                                          ),
-                                    title: Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            displayName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF0F172A),
-                                              fontSize: 14.5,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        if (isOwner) ...[
-                                          const SizedBox(width: 5),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFFEF3C7),
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: const Color(0xFFFCD34D)),
-                                            ),
-                                            child: const Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.vpn_key, size: 10, color: Color(0xFFB45309)),
-                                                SizedBox(width: 2),
-                                                Text('Key', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
-                                              ],
-                                            ),
-                                          ),
-                                        ] else if (isDeputy) ...[
-                                          const SizedBox(width: 5),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFEFF6FF),
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: const Color(0xFFBFDBFE)),
-                                            ),
-                                            child: const Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.shield, size: 10, color: Color(0xFF1D4ED8)),
-                                                SizedBox(width: 2),
-                                                Text('Phó', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        if (isPinned) ...[
-                                          const SizedBox(width: 4),
-                                          const Icon(Icons.push_pin, size: 13, color: Color(0xFFF59E0B)),
-                                        ],
-                                      ],
-                                    ),
-                                    subtitle: Text(
-                                      room.lastMessage ?? 'Chưa có tin nhắn',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: room.unreadCount > 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                                        fontWeight: room.unreadCount > 0 ? FontWeight.bold : FontWeight.w500,
-                                        fontSize: 12.5,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppTheme.primaryCyan.withAlpha(25)
+                                          : AppTheme.surfaceContainerLow.withAlpha(220),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppTheme.primaryCyan.withAlpha(120)
+                                            : const Color(0x1AFFFFFF),
+                                        width: 1,
                                       ),
                                     ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
+                                    child: Stack(
                                       children: [
-                                        Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            if (room.lastMessageTime != null)
-                                              Text(
-                                                AppConstants.formatTimestamp(room.lastMessageTime!),
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF94A3B8),
-                                                  fontWeight: FontWeight.w600,
+                                        // Left cyan glowing strip for active/unread conversations
+                                        if (hasUnread || index == 0)
+                                          Positioned(
+                                            left: 0,
+                                            top: 8,
+                                            bottom: 8,
+                                            child: Container(
+                                              width: 3.5,
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.primaryCyan,
+                                                borderRadius: BorderRadius.circular(2),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppTheme.primaryCyan.withAlpha(180),
+                                                    blurRadius: 6,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ListTile(
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                                          leading: Stack(
+                                            children: [
+                                              room.type == ChatRoomType.direct
+                                                  ? DirectUserAvatar(
+                                                      userId: otherUserId,
+                                                      fallbackName: displayName,
+                                                      fallbackPhotoUrl: room.photoUrl,
+                                                      radius: 23,
+                                                      showBadge: true,
+                                                    )
+                                                  : AvatarWidget(
+                                                      photoUrl: room.photoUrl,
+                                                      name: displayName,
+                                                      radius: 23,
+                                                    ),
+                                              if (room.type == ChatRoomType.group)
+                                                Positioned(
+                                                  bottom: -1,
+                                                  right: -1,
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppTheme.secondaryViolet,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: AppTheme.surfaceDark, width: 1.5),
+                                                    ),
+                                                    child: const Icon(Icons.groups, color: Colors.white, size: 10),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          title: Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  displayName,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                    fontSize: 14.5,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            const SizedBox(height: 3),
-                                            if (room.unreadCount > 0)
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF0284C7),
-                                                  borderRadius: BorderRadius.circular(10),
+                                              if (room.type == ChatRoomType.group) ...[
+                                                const SizedBox(width: 5),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme.surfaceContainerHighest,
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text(
+                                                    'NHÓM',
+                                                    style: TextStyle(
+                                                      fontSize: 8.5,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: AppTheme.onSurfaceVariant,
+                                                    ),
+                                                  ),
                                                 ),
-                                                child: Text(
-                                                  '${room.unreadCount}',
-                                                  style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                                              ],
+                                              if (isOwner) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFEF3C7).withAlpha(30),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: const Color(0xFFFCD34D).withAlpha(100), width: 0.8),
+                                                  ),
+                                                  child: const Text(
+                                                    '🔑 Trưởng nhóm',
+                                                    style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFFFCD34D)),
+                                                  ),
                                                 ),
-                                              )
-                                            else
-                                              const Icon(Icons.done_all, size: 15, color: Color(0xFF0284C7)),
-                                          ],
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(),
-                                          onPressed: () => _showChatLongPressMenu(context, room, currentUser.uid, displayName),
+                                              ],
+                                              if (isDeputy) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme.primaryCyan.withAlpha(20),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: AppTheme.primaryCyan.withAlpha(80), width: 0.8),
+                                                  ),
+                                                  child: const Text(
+                                                    '🛡️ Phó nhóm',
+                                                    style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppTheme.primaryCyan),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          subtitle: Padding(
+                                            padding: const EdgeInsets.only(top: 3),
+                                            child: Text(
+                                              room.lastMessage ?? (loc.isVietnamese ? 'Chưa có tin nhắn nào' : 'No messages yet'),
+                                              style: TextStyle(
+                                                color: hasUnread ? Colors.white : AppTheme.onSurfaceVariant,
+                                                fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+                                                fontSize: 12.5,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  if (room.lastMessageTime != null)
+                                                    Text(
+                                                      AppConstants.formatTimestamp(room.lastMessageTime!),
+                                                      style: TextStyle(
+                                                        fontSize: 10.5,
+                                                        color: hasUnread ? AppTheme.primaryCyan : const Color(0xFF64748B),
+                                                        fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                  const SizedBox(height: 3),
+                                                  if (room.unreadCount > 0)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: AppTheme.primaryCyan,
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: AppTheme.primaryCyan.withAlpha(120),
+                                                            blurRadius: 6,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      child: Text(
+                                                        '${room.unreadCount}',
+                                                        style: const TextStyle(fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold),
+                                                      ),
+                                                    )
+                                                  else
+                                                    const Icon(Icons.done_all, size: 15, color: AppTheme.primaryCyan),
+                                                ],
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                onPressed: () => _showChatLongPressMenu(context, room, currentUser.uid, displayName),
+                                              ),
+                                            ],
+                                          ),
+                                          onTap: () => _openChat(room),
+                                          onLongPress: () => _showChatLongPressMenu(context, room, currentUser.uid, displayName),
                                         ),
                                       ],
                                     ),
-                                    onTap: () => _openChat(room),
-                                    onLongPress: () => _showChatLongPressMenu(context, room, currentUser.uid, displayName),
                                   ),
                                 );
                               },
@@ -901,6 +1261,130 @@ class _ChatListViewState extends State<ChatListView> {
           ),
         ],
       ),
+      floatingActionButton: _buildCyberExpandableFab(context),
+    );
+  }
+
+  Widget _buildCyberExpandableFab(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_isFabOpen) ...[
+          // Option 1: Screen Share / Quick Meeting
+          InkWell(
+            onTap: () {
+              setState(() => _isFabOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ScreenShareViewerScreen(
+                    remoteUserName: 'Bạn',
+                    streamTitle: 'Phòng Stream & Screen Share P2P',
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerHigh.withAlpha(245),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x33FFFFFF)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withAlpha(120), blurRadius: 16),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Tạo phòng gọi & Screen Share',
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(width: 10),
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppTheme.primaryCyan,
+                    child: Icon(Icons.screen_share, color: Colors.black, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Option 2: Create Group
+          InkWell(
+            onTap: () {
+              setState(() => _isFabOpen = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerHigh.withAlpha(245),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x33FFFFFF)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withAlpha(120), blurRadius: 16),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Tạo nhóm trò chuyện mới',
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(width: 10),
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppTheme.secondaryViolet,
+                    child: Icon(Icons.group_add, color: Colors.white, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+
+        // Main FAB Trigger
+        InkWell(
+          onTap: () => setState(() => _isFabOpen = !_isFabOpen),
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [AppTheme.primaryCyan, Color(0xFF4FACFE), AppTheme.secondaryViolet],
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryCyan.withAlpha(120),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              _isFabOpen ? Icons.close : Icons.edit_square,
+              color: Colors.black,
+              size: 26,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -909,6 +1393,8 @@ class _ChatListViewState extends State<ChatListView> {
     int? count,
     required bool isSelected,
     required VoidCallback onTap,
+    bool isError = false,
+    bool hasLiveDot = false,
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
@@ -916,24 +1402,40 @@ class _ChatListViewState extends State<ChatListView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0284C7) : Colors.white,
+          color: isSelected ? null : AppTheme.surfaceContainerHigh,
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+                )
+              : null,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
+            color: isSelected ? Colors.transparent : const Color(0x22FFFFFF),
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: const Color(0xFF0284C7).withAlpha(40), blurRadius: 4, offset: const Offset(0, 1))]
+              ? [BoxShadow(color: AppTheme.primaryCyan.withAlpha(80), blurRadius: 10, offset: const Offset(0, 1))]
               : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (hasLiveDot) ...[
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppTheme.tertiaryMagenta,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+            ],
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
+                color: isSelected ? Colors.black : AppTheme.onSurfaceVariant,
               ),
             ),
             if (count != null && count > 0) ...[
@@ -941,7 +1443,9 @@ class _ChatListViewState extends State<ChatListView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF0369A1) : const Color(0xFFE0F2FE),
+                  color: isSelected
+                      ? Colors.black.withAlpha(25)
+                      : (isError ? AppTheme.tertiaryMagenta.withAlpha(30) : const Color(0x22FFFFFF)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -949,7 +1453,9 @@ class _ChatListViewState extends State<ChatListView> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : const Color(0xFF0369A1),
+                    color: isSelected
+                        ? Colors.black
+                        : (isError ? AppTheme.tertiaryMagenta : Colors.white),
                   ),
                 ),
               ),
