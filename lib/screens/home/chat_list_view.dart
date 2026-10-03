@@ -13,9 +13,6 @@ import '../chat/create_group_screen.dart';
 import '../chat/group_settings_screen.dart';
 import '../chat/wallpaper_picker_screen.dart';
 import '../tiktok/tiktok_viewer_screen.dart';
-import '../call/call_screen.dart';
-import '../call/screen_share_viewer_screen.dart';
-import '../../models/call_model.dart';
 import '../../services/localization_service.dart';
 
 class ChatListView extends StatefulWidget {
@@ -36,8 +33,7 @@ class _ChatListViewState extends State<ChatListView> {
   final TextEditingController _searchController = TextEditingController();
   final ChatService _chatService = ChatService();
   String _searchQuery = '';
-  String _activeCategory = 'all'; // 'all', 'unread', 'groups', 'liveshare'
-  bool _isFabOpen = false;
+  String _activeCategory = 'all'; // 'all', 'unread', 'groups'
 
   @override
   void dispose() {
@@ -619,14 +615,6 @@ class _ChatListViewState extends State<ChatListView> {
                               isSelected: _activeCategory == 'groups',
                               onTap: () => setState(() => _activeCategory = 'groups'),
                             ),
-                            const SizedBox(width: 8),
-                            _buildCategoryChip(
-                              label: 'Đang Live Share',
-                              count: 3,
-                              hasLiveDot: true,
-                              isSelected: _activeCategory == 'liveshare',
-                              onTap: () => setState(() => _activeCategory = 'liveshare'),
-                            ),
                           ],
                         ),
                       ),
@@ -741,174 +729,8 @@ class _ChatListViewState extends State<ChatListView> {
                             ),
                           ),
 
-                          // Live Screen Sharing Friend (Minh Quân)
-                          InkWell(
-                            borderRadius: BorderRadius.circular(36),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ScreenShareViewerScreen(
-                                    remoteUserName: 'Minh Quân',
-                                    streamTitle: 'Cyberpunk Gameplay 4K 60FPS',
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Container(
-                                        width: 52,
-                                        height: 52,
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: const LinearGradient(
-                                            colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet, AppTheme.tertiaryMagenta],
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppTheme.primaryCyan.withAlpha(100),
-                                              blurRadius: 8,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.surfaceDark,
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.screen_share, color: AppTheme.primaryCyan, size: 22),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: -3,
-                                        left: 4,
-                                        right: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.surfaceContainerLowest,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: AppTheme.primaryCyan.withAlpha(150), width: 0.8),
-                                          ),
-                                          child: const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                'SHARE',
-                                                style: TextStyle(
-                                                  color: AppTheme.primaryCyan,
-                                                  fontSize: 8,
-                                                  fontWeight: FontWeight.w900,
-                                                  letterSpacing: 0.5,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Minh Quân',
-                                    style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Live Voice Room Friend (Hương Ly)
-                          InkWell(
-                            borderRadius: BorderRadius.circular(36),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CallScreen(
-                                    callId: 'call_voice_${DateTime.now().millisecondsSinceEpoch}',
-                                    remoteUserName: 'Hương Ly',
-                                    callType: CallType.audio,
-                                    isCaller: true,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Container(
-                                        width: 52,
-                                        height: 52,
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: LinearGradient(
-                                            colors: [AppTheme.secondaryViolet, AppTheme.primaryCyan],
-                                          ),
-                                        ),
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.surfaceDark,
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.graphic_eq, color: AppTheme.violetLight, size: 22),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: -3,
-                                        left: 6,
-                                        right: 6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.violetContainer,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Center(
-                                            child: Text(
-                                              'VOICE',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'Hương Ly',
-                                    style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
                           // Stories from active rooms
-                          ...rooms.take(6).map((r) {
+                          ...rooms.take(8).map((r) {
                             final dName = r.getDisplayName(currentUser.uid);
                             final isUnread = r.unreadCount > 0;
                             return InkWell(
@@ -1261,130 +1083,36 @@ class _ChatListViewState extends State<ChatListView> {
           ),
         ],
       ),
-      floatingActionButton: _buildCyberExpandableFab(context),
-    );
-  }
-
-  Widget _buildCyberExpandableFab(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (_isFabOpen) ...[
-          // Option 1: Screen Share / Quick Meeting
-          InkWell(
-            onTap: () {
-              setState(() => _isFabOpen = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ScreenShareViewerScreen(
-                    remoteUserName: 'Bạn',
-                    streamTitle: 'Phòng Stream & Screen Share P2P',
-                  ),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerHigh.withAlpha(245),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33FFFFFF)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withAlpha(120), blurRadius: 16),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Tạo phòng gọi & Screen Share',
-                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(width: 10),
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppTheme.primaryCyan,
-                    child: Icon(Icons.screen_share, color: Colors.black, size: 18),
-                  ),
-                ],
-              ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+          );
+        },
+        backgroundColor: Colors.transparent,
+        elevation: 6,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryCyan, AppTheme.secondaryViolet],
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryCyan.withAlpha(120),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-
-          // Option 2: Create Group
-          InkWell(
-            onTap: () {
-              setState(() => _isFabOpen = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerHigh.withAlpha(245),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33FFFFFF)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withAlpha(120), blurRadius: 16),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Tạo nhóm trò chuyện mới',
-                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(width: 10),
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppTheme.secondaryViolet,
-                    child: Icon(Icons.group_add, color: Colors.white, size: 18),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-
-        // Main FAB Trigger
-        InkWell(
-          onTap: () => setState(() => _isFabOpen = !_isFabOpen),
-          borderRadius: BorderRadius.circular(28),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [AppTheme.primaryCyan, Color(0xFF4FACFE), AppTheme.secondaryViolet],
-                begin: Alignment.bottomLeft,
-                end: Alignment.topRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryCyan.withAlpha(120),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              _isFabOpen ? Icons.close : Icons.edit_square,
-              color: Colors.black,
-              size: 26,
-            ),
-          ),
+          child: const Icon(Icons.edit_square, color: Colors.black, size: 24),
         ),
-      ],
+      ),
     );
   }
 

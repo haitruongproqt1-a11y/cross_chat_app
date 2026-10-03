@@ -13,8 +13,9 @@ import '../../services/notification_service.dart';
 import '../../services/ota_update_service.dart';
 import '../../services/localization_service.dart';
 import 'chat_list_view.dart';
-import 'calls_view.dart';
-import 'explore_hub_view.dart';
+import 'contacts_view.dart';
+import '../nearby/nearby_friends_screen.dart';
+import '../wall/user_wall_screen.dart';
 import 'settings_view.dart';
 import '../../widgets/stitch_header_bar.dart';
 import '../../widgets/stitch_bottom_nav_bar.dart';
@@ -37,8 +38,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   late final List<Widget> _views = [
     const ChatListView(embeddedInHomeScreen: true),
-    const CallsView(embeddedInHomeScreen: true),
-    const ExploreHubView(embeddedInHomeScreen: true),
+    const ContactsView(embeddedInHomeScreen: true),
+    const NearbyFriendsScreen(embeddedInHomeScreen: true),
+    const UserWallScreen(embeddedInHomeScreen: true),
     const SettingsView(embeddedInHomeScreen: true),
   ];
 
@@ -298,12 +300,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     String subHeader = 'ĐOẠN CHAT';
     switch (_currentIndex) {
       case 1:
-        subHeader = loc.isVietnamese ? 'CUỘC GỌI' : 'CALLS';
+        subHeader = loc.isVietnamese ? 'DANH BẠ' : 'CONTACTS';
         break;
       case 2:
-        subHeader = loc.isVietnamese ? 'KHÁM PHÁ' : 'EXPLORE';
+        subHeader = loc.isVietnamese ? 'QUANH ĐÂY' : 'RADAR';
         break;
       case 3:
+        subHeader = loc.isVietnamese ? 'NHẬT KÝ' : 'WALL';
+        break;
+      case 4:
         subHeader = loc.isVietnamese ? 'CÀI ĐẶT' : 'SETTINGS';
         break;
       default:
@@ -315,8 +320,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         subTitle: subHeader,
         onBrandTap: () => setState(() => _currentIndex = 0),
         onRadarTap: () => setState(() => _currentIndex = 2),
-        onDiaryTap: () => setState(() => _currentIndex = 2),
-        onSettingsTap: () => setState(() => _currentIndex = 3),
+        onDiaryTap: () => setState(() => _currentIndex = 3),
+        onSettingsTap: () => setState(() => _currentIndex = 4),
         onTikTokTap: () {
           Navigator.push(
             context,

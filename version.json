@@ -1,9 +1,9 @@
 {
-  "version": "1.0.24",
-  "build_number": 25,
+  "version": "1.0.25",
+  "build_number": 26,
   "release_date": "2026-10-03",
-  "changelog": "- Chuyển đổi toàn diện sang bộ giao diện Stitch Vibrant Cyber-Glass (Midnight Obsidian + Electric Cyan #00F2FE + Deep Violet #7928CA):\n- Thống nhất logo thương hiệu KiniChat chuẩn nét neon đồng bộ 100% trên toàn bộ các màn hình (Đăng ký, Đăng nhập, Header chính, Thanh điều hướng, Trò chuyện).\n- Bổ sung màn hình và tab Cuộc gọi & Tạo phòng họp nhanh (CallsView) chuẩn Stitch: thẻ P2P Ultra Stream ambient card, tạo link họp nhanh kinichat.me, lưới tác vụ nhanh, lịch sử cuộc gọi và phiên Screen Share.\n- Bổ sung trải nghiệm Chia sẻ màn hình 1:1 độc lập (ScreenShareViewerScreen): hiển thị luồng trực tiếp 1080p 60fps, PiP webcam avatar nổi, bong bóng thả cảm xúc bay và thanh điều khiển kính mờ (Mic, Camera, Toàn màn hình).\n- Tích hợp Sticky Screen Share Alert card ghim đầu cuộc trò chuyện và dock soạn thảo thông minh với các chip phản hồi nhanh.\n- Tích hợp Tab Khám phá (ExploreHubView) gom trọn Radar quét bạn bè quanh đây, Tường nhà cá nhân/Nhật ký và TikTok Live.\n- Nâng cấp giao diện Đăng nhập & Đăng ký sang nền Cyber Obsidian huyền bí với các hiệu ứng hào quang ánh sáng rực rỡ.\n- Giữ nguyên 100% bảo mật logic nhắn tin E2EE, cơ chế gọi WebRTC và truyền tải dữ liệu an toàn.",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/update_v1.0.24.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.24/app-arm64-v8a-release.apk"
+  "changelog": "- Tinh chỉnh hoàn thiện 100% giao diện thực tế theo chuẩn Stitch Cyber-Glass, xóa bỏ toàn bộ dữ liệu mẫu và tính năng giả lập:\n- Khôi phục chuẩn xác 5 tab hoạt động thực tế của ứng dụng: Đoạn chat, Danh bạ, Quanh đây (Radar GPS), Nhật ký cá nhân, Cài đặt hệ thống.\n- Xóa bỏ triệt để các màn hình xem mẫu (ScreenShareViewerScreen), banner giả lập chia sẻ màn hình, và các mục dữ liệu cứng (Minh Quân, Hương Ly, link phòng họp không tồn tại).\n- Kết nối không gian trực tiếp (Orbit story bar) trực tiếp từ danh sách bạn bè và cuộc trò chuyện thật của người dùng.\n- Thanh soạn thảo Cyber-Glass tối ưu, hoạt động mượt mà với bộ chọn tệp đính kèm đa phương tiện, nhập tin nhắn mã hóa và nút gửi gradient phát sáng.\n- Giữ nguyên 100% tính năng gọi thoại, gọi video và chia sẻ màn hình WebRTC thời gian thực trong CallScreen bảo mật cao.",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.25/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.25/update_v1.0.25.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.25/app-arm64-v8a-release.apk"
 }

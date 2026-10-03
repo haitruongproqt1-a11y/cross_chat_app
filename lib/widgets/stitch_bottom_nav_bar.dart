@@ -25,24 +25,29 @@ class StitchBottomNavBar extends StatelessWidget {
       _NavItem(
         icon: Icons.chat_bubble_outline_rounded,
         activeIcon: Icons.chat_bubble_rounded,
-        label: loc.isVietnamese ? 'Đoạn chat' : 'Chats',
+        label: loc.t('tab_messages'),
         badgeCount: unreadChatsCount > 0 ? unreadChatsCount : null,
       ),
       _NavItem(
-        icon: Icons.call_outlined,
-        activeIcon: Icons.call_rounded,
-        label: loc.isVietnamese ? 'Cuộc gọi' : 'Calls',
+        icon: Icons.people_outline_rounded,
+        activeIcon: Icons.people_rounded,
+        label: loc.t('tab_contacts'),
       ),
       _NavItem(
-        icon: Icons.hub_outlined,
-        activeIcon: Icons.hub_rounded,
-        label: loc.isVietnamese ? 'Khám phá' : 'Explore',
+        icon: Icons.radar_outlined,
+        activeIcon: Icons.radar_rounded,
+        label: loc.t('tab_nearby'),
+      ),
+      _NavItem(
+        icon: Icons.newspaper_outlined,
+        activeIcon: Icons.newspaper_rounded,
+        label: loc.t('tab_wall'),
         hasDot: hasDiaryUpdate,
       ),
       _NavItem(
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings_rounded,
-        label: loc.isVietnamese ? 'Cài đặt' : 'Settings',
+        label: loc.t('tab_settings'),
         hasFlag: true,
       ),
     ];
