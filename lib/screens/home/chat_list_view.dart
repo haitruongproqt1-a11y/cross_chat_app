@@ -15,8 +15,13 @@ import '../../services/localization_service.dart';
 
 class ChatListView extends StatefulWidget {
   final Function(ChatRoomModel)? onRoomSelected;
+  final bool embeddedInHomeScreen;
 
-  const ChatListView({super.key, this.onRoomSelected});
+  const ChatListView({
+    super.key,
+    this.onRoomSelected,
+    this.embeddedInHomeScreen = false,
+  });
 
   @override
   State<ChatListView> createState() => _ChatListViewState();
@@ -204,72 +209,111 @@ class _ChatListViewState extends State<ChatListView> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(loc.t('tab_messages'), style: const TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x5500F2FE), offset: Offset(-1, -1), blurRadius: 3),
-                  BoxShadow(color: Color(0x55FE0979), offset: Offset(1, 1), blurRadius: 3),
-                ],
-              ),
-              child: const Icon(Icons.music_note, color: Colors.white, size: 16),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: widget.embeddedInHomeScreen
+          ? null
+          : AppBar(
+              title: Text(loc.t('tab_messages'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              actions: [
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x5500F2FE), offset: Offset(-1, -1), blurRadius: 3),
+                        BoxShadow(color: Color(0x55FE0979), offset: Offset(1, 1), blurRadius: 3),
+                      ],
+                    ),
+                    child: const Icon(Icons.music_note, color: Colors.white, size: 16),
+                  ),
+                  tooltip: loc.t('tiktok_viewer'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TikTokViewerScreen()),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.group_add_outlined),
+                  tooltip: loc.isVietnamese ? 'Tạo Nhóm Mới' : 'Create Group',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+                    );
+                  },
+                ),
+              ],
             ),
-            tooltip: loc.t('tiktok_viewer'),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TikTokViewerScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.group_add_outlined),
-            tooltip: loc.isVietnamese ? 'Tạo Nhóm Mới' : 'Create Group',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
-              );
-            },
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          // Khung tìm kiếm
+          // Khung tìm kiếm Stitch UI
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: loc.t('search_chat_hint'),
-                prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
-                suffixIcon: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_searchQuery.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      ),
-                    const Padding(
-                      padding: EdgeInsets.only(right: 10),
-                      child: Icon(Icons.tune_rounded, size: 19, color: Color(0xFF94A3B8)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                  ],
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: loc.t('search_chat_hint'),
+                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: Icon(Icons.tune_rounded, size: 18, color: Color(0xFF94A3B8)),
+                              ),
+                        border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                    ),
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                if (widget.embeddedInHomeScreen) ...[
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0284C7).withAlpha(20),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF0284C7).withAlpha(40)),
+                      ),
+                      child: const Icon(Icons.group_add_outlined, color: Color(0xFF0284C7), size: 20),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 

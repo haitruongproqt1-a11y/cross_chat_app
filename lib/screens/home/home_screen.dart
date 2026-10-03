@@ -17,6 +17,9 @@ import '../../services/localization_service.dart';
 import 'chat_list_view.dart';
 import 'contacts_view.dart';
 import 'settings_view.dart';
+import '../../widgets/stitch_header_bar.dart';
+import '../../widgets/stitch_bottom_nav_bar.dart';
+import '../tiktok/tiktok_viewer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,12 +36,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final int _initTimestamp = DateTime.now().millisecondsSinceEpoch;
   AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
 
-  final List<Widget> _views = const [
-    ChatListView(),
-    ContactsView(),
-    NearbyFriendsScreen(),
-    UserWallScreen(),
-    SettingsView(),
+  late final List<Widget> _views = [
+    const ChatListView(embeddedInHomeScreen: true),
+    const ContactsView(embeddedInHomeScreen: true),
+    const NearbyFriendsScreen(embeddedInHomeScreen: true),
+    const UserWallScreen(embeddedInHomeScreen: true),
+    const SettingsView(embeddedInHomeScreen: true),
   ];
 
   @override
@@ -290,45 +293,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  // Giao diện Mobile với thanh điều hướng đáy (BottomNavigationBar)
+  // Giao diện Mobile với thanh điều hướng đáy StitchBottomNavBar và StitchHeaderBar
   Widget _buildMobileLayout() {
     final loc = Provider.of<LocalizationService>(context);
 
+    String headerTitle = 'KINI CHAT';
+    switch (_currentIndex) {
+      case 1:
+        headerTitle = loc.isVietnamese ? 'KINI CHAT Danh Bạ' : 'KINI CHAT Contacts';
+        break;
+      case 2:
+        headerTitle = loc.isVietnamese ? 'KINI CHAT Quanh Đây' : 'KINI CHAT Radar';
+        break;
+      case 3:
+        headerTitle = loc.isVietnamese ? 'KINI CHAT Nhật Ký' : 'KINI CHAT Wall';
+        break;
+      case 4:
+        headerTitle = loc.isVietnamese ? 'KINI CHAT Cài Đặt' : 'KINI CHAT Settings';
+        break;
+      default:
+        headerTitle = 'KINI CHAT';
+    }
+
     return Scaffold(
+      appBar: StitchHeaderBar(
+        customTitle: headerTitle,
+        onBrandTap: () => setState(() => _currentIndex = 0),
+        onRadarTap: () => setState(() => _currentIndex = 2),
+        onDiaryTap: () => setState(() => _currentIndex = 3),
+        onSettingsTap: () => setState(() => _currentIndex = 4),
+        onTikTokTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TikTokViewerScreen()),
+          );
+        },
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _views,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline),
-            selectedIcon: const Icon(Icons.chat_bubble),
-            label: loc.t('tab_messages'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.contacts_outlined),
-            selectedIcon: const Icon(Icons.contacts),
-            label: loc.t('tab_contacts'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.explore_outlined),
-            selectedIcon: const Icon(Icons.explore),
-            label: loc.t('tab_nearby'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: const Icon(Icons.dynamic_feed),
-            label: loc.t('tab_wall'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: loc.t('tab_settings'),
-          ),
-        ],
+      bottomNavigationBar: StitchBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (idx) => setState(() => _currentIndex = idx),
       ),
     );
   }

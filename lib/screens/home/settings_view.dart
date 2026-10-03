@@ -12,7 +12,12 @@ import '../chat/bubble_theme_picker_screen.dart';
 import '../../utils/constants.dart';
 
 class SettingsView extends StatefulWidget {
-  const SettingsView({super.key});
+  final bool embeddedInHomeScreen;
+
+  const SettingsView({
+    super.key,
+    this.embeddedInHomeScreen = false,
+  });
 
   @override
   State<SettingsView> createState() => _SettingsViewState();
@@ -231,17 +236,19 @@ class _SettingsViewState extends State<SettingsView> {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Text(loc.t('account_profile'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Icon(Icons.shield, color: primaryColor, size: 28),
-          ),
-        ],
-      ),
+      appBar: widget.embeddedInHomeScreen
+          ? null
+          : AppBar(
+              title: Text(loc.t('account_profile'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22)),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Icon(Icons.shield, color: primaryColor, size: 28),
+                ),
+              ],
+            ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         children: [

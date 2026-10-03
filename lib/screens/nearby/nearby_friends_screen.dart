@@ -13,7 +13,12 @@ import '../chat/chat_detail_screen.dart';
 import '../wall/user_wall_screen.dart';
 
 class NearbyFriendsScreen extends StatefulWidget {
-  const NearbyFriendsScreen({super.key});
+  final bool embeddedInHomeScreen;
+
+  const NearbyFriendsScreen({
+    super.key,
+    this.embeddedInHomeScreen = false,
+  });
 
   @override
   State<NearbyFriendsScreen> createState() => _NearbyFriendsScreenState();
@@ -199,6 +204,7 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        top: !widget.embeddedInHomeScreen,
         child: Column(
           children: [
             const SizedBox(height: 12),
