@@ -1,0 +1,6 @@
+{
+  "name": "KINI CHAT - Ứng Dụng Nhắn Tin & Radar E2EE",
+  "description": "Ứng dụng nhắn tin siêu tốc KINI CHAT với mã hóa đầu cuối E2EE, radar tìm quanh đây GPS, phân quyền Key nhóm và gọi video chia sẻ màn hình.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

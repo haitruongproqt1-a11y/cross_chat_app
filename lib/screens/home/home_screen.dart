@@ -13,6 +13,7 @@ import '../wall/user_wall_screen.dart';
 import '../../services/call_sound_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/ota_update_service.dart';
+import '../../services/localization_service.dart';
 import 'chat_list_view.dart';
 import 'contacts_view.dart';
 import 'settings_view.dart';
@@ -291,6 +292,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Giao diện Mobile với thanh điều hướng đáy (BottomNavigationBar)
   Widget _buildMobileLayout() {
+    final loc = Provider.of<LocalizationService>(context);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -299,31 +302,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Tin nhắn',
+            icon: const Icon(Icons.chat_bubble_outline),
+            selectedIcon: const Icon(Icons.chat_bubble),
+            label: loc.t('tab_messages'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.contacts_outlined),
-            selectedIcon: Icon(Icons.contacts),
-            label: 'Danh bạ',
+            icon: const Icon(Icons.contacts_outlined),
+            selectedIcon: const Icon(Icons.contacts),
+            label: loc.t('tab_contacts'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Quanh đây',
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore),
+            label: loc.t('tab_nearby'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Tường',
+            icon: const Icon(Icons.dynamic_feed_outlined),
+            selectedIcon: const Icon(Icons.dynamic_feed),
+            label: loc.t('tab_wall'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Cá nhân',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: loc.t('tab_settings'),
           ),
         ],
       ),
@@ -334,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildDesktopLayout() {
     final chatProvider = Provider.of<ChatProvider>(context);
     final activeRoom = chatProvider.activeRoom;
+    final loc = Provider.of<LocalizationService>(context);
 
     return Scaffold(
       body: Row(
@@ -347,31 +351,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Icon(Icons.forum_rounded, size: 36, color: Colors.blueAccent),
             ),
-            destinations: const [
+            destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.chat_bubble_outline),
-                selectedIcon: Icon(Icons.chat_bubble),
-                label: Text('Tin nhắn'),
+                icon: const Icon(Icons.chat_bubble_outline),
+                selectedIcon: const Icon(Icons.chat_bubble),
+                label: Text(loc.t('tab_messages')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.contacts_outlined),
-                selectedIcon: Icon(Icons.contacts),
-                label: Text('Danh bạ'),
+                icon: const Icon(Icons.contacts_outlined),
+                selectedIcon: const Icon(Icons.contacts),
+                label: Text(loc.t('tab_contacts')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.explore_outlined),
-                selectedIcon: Icon(Icons.explore),
-                label: Text('Quanh đây'),
+                icon: const Icon(Icons.explore_outlined),
+                selectedIcon: const Icon(Icons.explore),
+                label: Text(loc.t('tab_nearby')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.dynamic_feed_outlined),
-                selectedIcon: Icon(Icons.dynamic_feed),
-                label: Text('Tường'),
+                icon: const Icon(Icons.dynamic_feed_outlined),
+                selectedIcon: const Icon(Icons.dynamic_feed),
+                label: Text(loc.t('tab_wall')),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: Text('Cá nhân'),
+                icon: const Icon(Icons.person_outline),
+                selectedIcon: const Icon(Icons.person),
+                label: Text(loc.t('tab_settings')),
               ),
             ],
           ),

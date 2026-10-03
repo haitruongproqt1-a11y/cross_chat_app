@@ -21,6 +21,7 @@ import '../../widgets/chat_wallpaper_widget.dart';
 import 'bubble_theme_picker_screen.dart';
 import 'wallpaper_picker_screen.dart';
 import 'group_settings_screen.dart';
+import '../../services/localization_service.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -357,6 +358,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;
+    final loc = Provider.of<LocalizationService>(context);
     final theme = Theme.of(context);
     final isDirect = widget.room.type == ChatRoomType.direct;
 
@@ -465,8 +467,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         ),
                         Text(
                           widget.room.type == ChatRoomType.group
-                              ? '${currentRoom.memberIds.length} thành viên • Quản lý'
-                              : (isBlockedByMe ? 'Đã bị chặn' : 'Đang hoạt động'),
+                              ? '${currentRoom.memberIds.length} ${loc.t('members_suffix')}'
+                              : (isBlockedByMe ? loc.t('blocked_notice') : loc.t('active_now')),
                           style: TextStyle(
                             fontSize: 12,
                             color: isBlockedByMe ? Colors.redAccent : Colors.green,
@@ -489,17 +491,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   ),
                   child: const Icon(Icons.music_note, color: Color(0xFF00F2FE), size: 16),
                 ),
-                tooltip: 'Lướt TikTok & LIVE',
+                tooltip: loc.t('tiktok_viewer'),
                 onPressed: _openTikTok,
               ),
               IconButton(
                 icon: const Icon(Icons.call_outlined),
-                tooltip: 'Gọi thoại',
+                tooltip: loc.t('voice_call'),
                 onPressed: () => _startCall(CallType.audio),
               ),
               IconButton(
                 icon: const Icon(Icons.videocam_outlined),
-                tooltip: 'Gọi Video',
+                tooltip: loc.t('video_call'),
                 onPressed: () => _startCall(CallType.video),
               ),
               PopupMenuButton<String>(
@@ -509,28 +511,28 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     await _chatService.addFriend(currentUserId: currentUser.uid, friendUserId: otherUserId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã thêm bạn bè thành công!')),
+                        SnackBar(content: Text(loc.isVietnamese ? 'Đã thêm bạn bè thành công!' : 'Friend added successfully!')),
                       );
                     }
                   } else if (value == 'remove_friend') {
                     await _chatService.removeFriend(currentUserId: currentUser.uid, friendUserId: otherUserId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã xóa khỏi danh bạ bạn bè')),
+                        SnackBar(content: Text(loc.isVietnamese ? 'Đã xóa khỏi danh bạ bạn bè' : 'Removed from friends')),
                       );
                     }
                   } else if (value == 'block') {
                     await _chatService.blockUser(currentUserId: currentUser.uid, targetUserId: otherUserId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã chặn tin nhắn và cuộc gọi của người này')),
+                        SnackBar(content: Text(loc.isVietnamese ? 'Đã chặn tin nhắn và cuộc gọi của người này' : 'Blocked messages and calls from this user')),
                       );
                     }
                   } else if (value == 'unblock') {
                     await _chatService.unblockUser(currentUserId: currentUser.uid, targetUserId: otherUserId);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã bỏ chặn thành công')),
+                        SnackBar(content: Text(loc.isVietnamese ? 'Đã bỏ chặn thành công' : 'Unblocked successfully')),
                       );
                     }
                   } else if (value == 'bubble_theme') {
@@ -566,14 +568,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Xóa cuộc trò chuyện?'),
-                        content: const Text('Toàn bộ nội dung tin nhắn sẽ bị xóa vĩnh viễn và không thể khôi phục.'),
+                        title: Text(loc.t('confirm_delete_title')),
+                        content: Text(loc.t('confirm_delete_desc')),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(loc.t('cancel'))),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Xóa'),
+                            child: Text(loc.t('delete')),
                           ),
                         ],
                       ),
@@ -593,92 +595,92 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 },
                 itemBuilder: (context) => [
                   if (!isDirect) ...[
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'group_settings',
                       child: Row(
                         children: [
-                          Icon(Icons.settings_outlined, color: Colors.blueAccent),
-                          SizedBox(width: 8),
-                          Text('Cài đặt nhóm'),
+                          const Icon(Icons.settings_outlined, color: Colors.blueAccent),
+                          const SizedBox(width: 8),
+                          Text(loc.t('group_settings')),
                         ],
                       ),
                     ),
                     const PopupMenuDivider(),
                   ],
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'bubble_theme',
                     child: Row(
                       children: [
-                        Icon(Icons.bubble_chart_outlined, color: Color(0xFFFE0979)),
-                        SizedBox(width: 8),
-                        Text('Đổi kiểu bong bóng chat'),
+                        const Icon(Icons.bubble_chart_outlined, color: Color(0xFFFE0979)),
+                        const SizedBox(width: 8),
+                        Text(loc.t('bubble_theme')),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'wallpaper',
                     child: Row(
                       children: [
-                        Icon(Icons.wallpaper, color: Color(0xFF0084FF)),
-                        SizedBox(width: 8),
-                        Text('Cài đặt hình nền'),
+                        const Icon(Icons.wallpaper, color: Color(0xFF0084FF)),
+                        const SizedBox(width: 8),
+                        Text(loc.t('wallpaper')),
                       ],
                     ),
                   ),
                   const PopupMenuDivider(),
                   if (isDirect && otherUserId.isNotEmpty) ...[
                     if (!isFriend)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'add_friend',
                         child: Row(
                           children: [
-                            Icon(Icons.person_add_outlined, color: Colors.blueAccent),
-                            SizedBox(width: 8),
-                            Text('Thêm vào danh bạ (Kết bạn)'),
+                            const Icon(Icons.person_add_outlined, color: Colors.blueAccent),
+                            const SizedBox(width: 8),
+                            Text(loc.t('add_friend')),
                           ],
                         ),
                       )
                     else
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'remove_friend',
                         child: Row(
                           children: [
-                            Icon(Icons.person_remove_outlined, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Text('Xóa khỏi danh bạ bạn bè'),
+                            const Icon(Icons.person_remove_outlined, color: Colors.orange),
+                            const SizedBox(width: 8),
+                            Text(loc.t('remove_friend')),
                           ],
                         ),
                       ),
                     if (!isBlockedByMe)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'block',
                         child: Row(
                           children: [
-                            Icon(Icons.block, color: Colors.redAccent),
-                            SizedBox(width: 8),
-                            Text('Chặn người này'),
+                            const Icon(Icons.block, color: Colors.redAccent),
+                            const SizedBox(width: 8),
+                            Text(loc.t('block_user')),
                           ],
                         ),
                       )
                     else
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'unblock',
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle_outline, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text('Bỏ chặn người này'),
+                            const Icon(Icons.check_circle_outline, color: Colors.green),
+                            const SizedBox(width: 8),
+                            Text(loc.t('unblock_user_action')),
                           ],
                         ),
                       ),
                   ],
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'clear',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, color: Colors.redAccent),
-                        SizedBox(width: 8),
-                        Text('Xóa cuộc trò chuyện', style: TextStyle(color: Colors.redAccent)),
+                        const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        const SizedBox(width: 8),
+                        Text(loc.t('delete_chat'), style: const TextStyle(color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -695,38 +697,47 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               if (_isUploading)
                 const LinearProgressIndicator(minHeight: 3),
 
-              // Thanh ghim tin nhắn Zalo
+              // Thanh ghim tin nhắn (Stitch UI style)
               if (currentRoom.pinnedMessageText != null && currentRoom.pinnedMessageText!.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withAlpha(35),
-                    border: Border(bottom: BorderSide(color: Colors.amber.withAlpha(80), width: 1)),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF0F9FF),
+                    border: Border(bottom: BorderSide(color: Color(0xFFBAE6FD), width: 1)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.push_pin, size: 18, color: Colors.orange),
-                      const SizedBox(width: 8),
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.push_pin, size: 16, color: Color(0xFF0369A1)),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tin nhắn đã ghim ${currentRoom.pinnedMessageSenderName != null ? '(${currentRoom.pinnedMessageSenderName})' : ''}',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange),
+                              '${loc.t('pinned_message_title').toUpperCase()} ${currentRoom.pinnedMessageSenderName != null ? '• ${currentRoom.pinnedMessageSenderName}' : ''}',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0369A1), letterSpacing: 0.5),
                             ),
+                            const SizedBox(height: 1),
                             Text(
                               currentRoom.pinnedMessageText!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        tooltip: 'Gỡ ghim',
+                        icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                        tooltip: loc.t('unpin'),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () => _chatService.unpinMessage(widget.room.id),
@@ -896,10 +907,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     children: [
                       const Icon(Icons.block, color: Colors.redAccent),
                       const SizedBox(width: 10),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Bạn đã chặn người dùng này.',
-                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                          loc.t('you_blocked_user'),
+                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
@@ -911,12 +922,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                             );
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đã bỏ chặn người dùng này')),
+                                SnackBar(content: Text(loc.isVietnamese ? 'Đã bỏ chặn người dùng này' : 'Unblocked this user')),
                               );
                             }
                           }
                         },
-                        child: const Text('Bỏ chặn', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(loc.t('unblock_user'), style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -926,15 +937,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   color: Colors.amber.withAlpha(25),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.lock_outline, size: 18, color: Colors.orange),
-                      SizedBox(width: 8),
+                      const Icon(Icons.lock_outline, size: 18, color: Colors.orange),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Chỉ Trưởng nhóm và Phó nhóm mới có thể gửi tin nhắn trong nhóm này.',
-                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13),
+                          loc.t('admin_lock_message_notice'),
+                          style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -959,7 +970,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
-                          tooltip: 'Đính kèm tệp, ảnh hoặc vị trí',
+                          tooltip: loc.isVietnamese ? 'Đính kèm tệp, ảnh hoặc vị trí' : 'Attach file, image, or location',
                           color: theme.colorScheme.primary,
                           onPressed: () {
                             showModalBottomSheet(
@@ -978,7 +989,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                             maxLines: 4,
                             minLines: 1,
                             decoration: InputDecoration(
-                              hintText: 'Nhập tin nhắn bảo mật...',
+                              hintText: loc.t('type_message_hint'),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
                                 borderSide: BorderSide.none,
@@ -994,7 +1005,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           backgroundColor: theme.colorScheme.primary,
                           child: IconButton(
                             icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                            tooltip: 'Gửi',
+                            tooltip: loc.isVietnamese ? 'Gửi' : 'Send',
                             onPressed: _sendTextMessage,
                           ),
                         ),

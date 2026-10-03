@@ -8,6 +8,8 @@ import '../../services/chat_service.dart';
 import '../../widgets/avatar_widget.dart';
 import '../wall/user_wall_screen.dart';
 import 'chat_detail_screen.dart';
+import 'wallpaper_picker_screen.dart';
+import '../../services/localization_service.dart';
 
 class GroupSettingsScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -572,6 +574,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = Provider.of<AuthProvider>(context).currentUser;
+    final loc = Provider.of<LocalizationService>(context);
     if (currentUser == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -593,7 +596,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Cài Đặt Nhóm', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(loc.t('group_settings_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           body: ListView(
             padding: const EdgeInsets.only(bottom: 40),
@@ -635,7 +638,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                           const SizedBox(width: 6),
                           IconButton(
                             icon: const Icon(Icons.edit, size: 18),
-                            tooltip: 'Đổi tên nhóm',
+                            tooltip: loc.t('edit_group_name'),
                             onPressed: () => _editGroupName(room),
                           ),
                         ],
@@ -643,8 +646,53 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${room.memberIds.length} thành viên • ${room.deputyIds.length}/10 Phó nhóm',
+                      '${room.memberIds.length} ${loc.t('members_suffix')} • ${room.deputyIds.length}/10 ${loc.t('role_deputy')}',
                       style: const TextStyle(color: Color(0xFF475569), fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 4 Quick Actions (Stitch TransferKeyModal style)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildQuickActionBtn(
+                          icon: Icons.person_add_outlined,
+                          label: loc.t('quick_add'),
+                          onTap: canAddMembers ? () => _openAddMembersDialog(room, currentUser) : null,
+                        ),
+                        _buildQuickActionBtn(
+                          icon: Icons.search,
+                          label: loc.t('quick_search'),
+                          onTap: () {
+                            // Focus member search field
+                          },
+                        ),
+                        _buildQuickActionBtn(
+                          icon: Icons.palette_outlined,
+                          label: loc.t('quick_theme'),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => WallpaperPickerScreen(
+                                  roomId: room.id,
+                                  currentWallpaperType: room.wallpaperType ?? 'none',
+                                  currentWallpaperValue: room.wallpaperValue ?? '',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildQuickActionBtn(
+                          icon: Icons.notifications_off_outlined,
+                          label: loc.t('quick_mute'),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(loc.isVietnamese ? 'Đã tắt chuông thông báo nhóm' : 'Group notifications muted')),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -657,7 +705,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Text(
-                    'QUYỀN QUẢN TRỊ VIÊN',
+                    loc.t('admin_permissions_header'),
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
@@ -667,8 +715,8 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                     children: [
                       SwitchListTile(
                         secondary: const Icon(Icons.lock_person_outlined, color: Colors.indigo),
-                        title: const Text('Chỉ Trưởng/Phó nhóm được gửi tin nhắn', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                        subtitle: const Text('Thành viên thường chỉ được xem, không thể gửi tin nhắn', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        title: Text(loc.t('only_admins_message'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        subtitle: Text(loc.t('only_admins_message_sub'), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                         value: room.onlyAdminsCanMessage,
                         onChanged: (val) async {
                           await _chatService.updateGroupSettings(roomId: room.id, onlyAdminsCanMessage: val);
@@ -677,8 +725,8 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                       const Divider(height: 1),
                       SwitchListTile(
                         secondary: const Icon(Icons.group_add_outlined, color: Colors.teal),
-                        title: const Text('Chỉ Trưởng/Phó nhóm được thêm người', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                        subtitle: const Text('Ngăn thành viên thường tự ý mời người lạ vào nhóm', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        title: Text(loc.t('only_admins_add'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        subtitle: Text(loc.t('only_admins_add_sub'), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                         value: room.onlyAdminsCanAddMembers,
                         onChanged: (val) async {
                           await _chatService.updateGroupSettings(roomId: room.id, onlyAdminsCanAddMembers: val);
@@ -697,14 +745,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'THÀNH VIÊN (${room.memberIds.length})',
+                      '${loc.t('members_header')} (${room.memberIds.length})',
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                     ),
                     if (canAddMembers)
                       TextButton.icon(
                         onPressed: () => _openAddMembersDialog(room, currentUser),
                         icon: const Icon(Icons.person_add_alt_1, size: 16),
-                        label: const Text('Thêm thành viên', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        label: Text(loc.t('add_member_btn'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),
@@ -716,7 +764,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 child: TextField(
                   controller: _searchMemberController,
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm thành viên trong nhóm...',
+                    hintText: loc.t('search_member_hint'),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     suffixIcon: _memberQuery.isNotEmpty
@@ -742,7 +790,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   separatorBuilder: (_, __) => const Divider(indent: 68, height: 1),
                   itemBuilder: (context, idx) {
                     final uid = filteredMemberIds[idx];
-                    final name = room.memberNames[uid] ?? 'Thành viên $uid';
+                    final name = room.memberNames[uid] ?? 'User $uid';
                     final isMemberOwner = room.isOwner(uid);
                     final isMemberDeputy = room.isDeputy(uid);
                     final isMe = uid == currentUser.uid;
@@ -756,7 +804,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                         children: [
                           Flexible(
                             child: Text(
-                              isMe ? '$name (Bạn)' : name,
+                              isMe ? (loc.isVietnamese ? '$name (Bạn)' : '$name (You)') : name,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -770,14 +818,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: Colors.amber.shade700, width: 0.8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('👑', style: TextStyle(fontSize: 10)),
-                                  SizedBox(width: 2),
+                                  const Text('👑', style: TextStyle(fontSize: 10)),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    'Trưởng nhóm',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber),
+                                    loc.t('role_owner'),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber),
                                   ),
                                 ],
                               ),
@@ -790,14 +838,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: Colors.blue.shade600, width: 0.8),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('🛡️', style: TextStyle(fontSize: 10)),
-                                  SizedBox(width: 2),
+                                  const Text('🛡️', style: TextStyle(fontSize: 10)),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    'Phó nhóm',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue),
+                                    loc.t('role_deputy'),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue),
                                   ),
                                 ],
                               ),
@@ -805,7 +853,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                         ],
                       ),
                       subtitle: isMe
-                          ? const Text('Tài khoản hiện tại', style: TextStyle(fontSize: 11, color: Color(0xFF64748B)))
+                          ? Text(loc.isVietnamese ? 'Tài khoản hiện tại' : 'Current account', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))
                           : null,
                       trailing: isMe
                           ? null
@@ -837,7 +885,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                   ),
                   icon: const Icon(Icons.exit_to_app),
                   label: Text(
-                    isOwner ? 'Rời nhóm & Trao lại Key' : 'Rời khỏi nhóm',
+                    isOwner ? loc.t('leave_group_owner_btn') : loc.t('leave_group_btn'),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   onPressed: () => _handleLeaveGroup(room, currentUser),
@@ -847,6 +895,41 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickActionBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        width: 76,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: onTap != null ? const Color(0xFF0284C7) : const Color(0xFF94A3B8), size: 22),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: onTap != null ? const Color(0xFF334155) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

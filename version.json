@@ -1,9 +1,9 @@
 {
-  "version": "1.0.20",
-  "build_number": 21,
+  "version": "1.0.21",
+  "build_number": 22,
   "release_date": "2026-10-03",
-  "changelog": "- Tự động lưu phiên đăng nhập: Tự động vào thẳng ứng dụng khi mở app mà không cần nhập lại mật khẩu, chỉ yêu cầu đăng nhập lại khi người dùng bấm Đăng xuất\n- Xóa cuộc trò chuyện phong cách Zalo: Cho phép vuốt sang trái hiện nút 'XÓA' màu đỏ hoặc dí tay giữ lâu vào tên người dùng để xóa sạch toàn bộ nội dung tin nhắn\n- Tự do rời nhóm chat: Thành viên và Trưởng/Phó nhóm đều có quyền tự rời nhóm. Riêng Trưởng nhóm có thể chủ động trao lại Key hoặc hệ thống sẽ tự động chọn ngẫu nhiên một thành viên còn lại làm Trưởng nhóm mới\n- Quản trị viên & Cấp Key Phó nhóm: Trưởng nhóm có thể cấp/gỡ Key Phó nhóm cho tối đa 10 thành viên, quản lý quyền gửi tin nhắn và thêm thành viên giống Zalo\n- Nâng cao độ tương phản chữ ở giao diện sáng (Light Mode): Màu chữ đen đậm sắc nét (#0F172A, #1E293B, #334155), không bị mờ nhạt, cực kỳ dễ đọc",
-  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/latest_ota_package.zip",
-  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/update_v1.0.20.zip",
-  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.20/app-arm64-v8a-release.apk"
+  "changelog": "- Tích hợp toàn diện giao diện Google Stitch: Header KINI chấm ngọc, chuyển đổi tab viên thuốc hiện đại\n- Tự động đăng nhập & sinh trắc học: Hỗ trợ xác thực vân tay/Face ID và lưu token an toàn\n- Thanh phân loại hội thoại: Tất cả, Chưa đọc (kèm đếm tin), Nhóm In Motion\n- Vòng quay Story & LIVE: Hiển thị trạng thái hoạt động tức thời và tạo tin nhanh\n- Huy hiệu chức danh Trưởng nhóm (Key 🔑) & Phó nhóm (Phó 🛡️), icon ghim tin nhắn\n- Radar quét quanh đây đồ họa đồng tâm thế hệ mới\n- Chuyển đổi song ngữ 100% Tiếng Việt 🇻🇳 hoặc 100% English 🇬🇧 tức thì\n- 4 Phím thao tác nhanh trong nhóm: Thêm, Tìm kiếm, Hình nền, Tắt chuông",
+  "ota_package_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.21/latest_ota_package.zip",
+  "update_zip_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.21/update_v1.0.21.zip",
+  "apk_url": "https://github.com/haitruongproqt1-a11y/cross_chat_app/releases/download/v1.0.21/app-arm64-v8a-release.apk"
 }

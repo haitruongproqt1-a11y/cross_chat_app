@@ -49,3 +49,4 @@ app.*.map.json
 
 /dist_ota/
 /dist_pc/
+*.ps1

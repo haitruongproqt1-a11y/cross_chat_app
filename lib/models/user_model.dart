@@ -31,6 +31,8 @@ class UserModel {
   final bool allowSearchById;
   final String? bubbleThemeId; // Kiểu bong bóng cá nhân của người dùng
 
+  String get id => uid;
+
   UserModel({
     required this.uid,
     required this.email,

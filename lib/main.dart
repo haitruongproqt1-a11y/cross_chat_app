@@ -10,6 +10,8 @@ import 'services/notification_service.dart';
 import 'utils/app_theme.dart';
 import 'utils/constants.dart';
 
+import 'services/localization_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,6 +29,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LocalizationService()..init()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],

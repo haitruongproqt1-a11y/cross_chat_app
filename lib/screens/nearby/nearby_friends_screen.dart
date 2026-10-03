@@ -302,11 +302,77 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
+              // Location Status Bar (Stitch UI)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F9FF),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.navigation, color: Color(0xFF0284C7), size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedProvince == 'Tất cả' ? (currentUser.hometown.isNotEmpty ? currentUser.hometown : 'Việt Nam') : _selectedProvince,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            'Định vị chính xác • Bán kính ${_selectedRadiusKm.toInt()}km',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: Color(0xFF10B981), size: 8),
+                          SizedBox(width: 4),
+                          Text(
+                            'Online',
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Concentric Radar Graphic (Stitch UI)
+              _buildRadarGraphic(currentUser),
+              const SizedBox(height: 16),
+
               // Tiêu đề & Subtitle
               const Text(
                 'Gặp người phù hợp ngay quanh đây',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF0F172A),
                 ),
@@ -314,9 +380,9 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
               const SizedBox(height: 4),
               const Text(
                 '50 km và 100 km luôn FREE cho mọi tài khoản KINI.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Ô tìm kiếm theo tên, khu vực
               Container(
@@ -1138,6 +1204,173 @@ class _NearbyFriendsScreenState extends State<NearbyFriendsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRadarGraphic(UserModel currentUser) {
+    return Container(
+      height: 190,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
+        ),
+        border: Border.all(color: const Color(0xFFBAE6FD)),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF0284C7).withAlpha(15), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Concentric Rings
+          Container(
+            width: 170,
+            height: 170,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF7DD3FC).withAlpha(120), width: 1.2),
+            ),
+          ),
+          Container(
+            width: 115,
+            height: 115,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF38BDF8).withAlpha(140), width: 1.2),
+            ),
+          ),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF0284C7).withAlpha(160), width: 1.2),
+              color: const Color(0xFFE0F2FE).withAlpha(100),
+            ),
+          ),
+
+          // User Blip 1 (Top Left)
+          Positioned(
+            top: 28,
+            left: 55,
+            child: _buildRadarBlip('0.8 km', const Color(0xFF10B981)),
+          ),
+
+          // User Blip 2 (Top Right)
+          Positioned(
+            top: 36,
+            right: 50,
+            child: _buildRadarBlip('1.4 km', const Color(0xFF0284C7)),
+          ),
+
+          // User Blip 3 (Bottom Left)
+          Positioned(
+            bottom: 38,
+            left: 70,
+            child: _buildRadarBlip('2.5 km', const Color(0xFF8B5CF6)),
+          ),
+
+          // User Blip 4 (Bottom Right)
+          Positioned(
+            bottom: 32,
+            right: 65,
+            child: _buildRadarBlip('3.1 km', const Color(0xFFF59E0B)),
+          ),
+
+          // Center Blip (Me)
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0369A1),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF0284C7).withAlpha(80), blurRadius: 8, spreadRadius: 2),
+              ],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Center(
+                  child: Icon(Icons.navigation, color: Colors.white, size: 18),
+                ),
+                Positioned(
+                  bottom: -1,
+                  right: -1,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Status Badge at Bottom
+          Positioned(
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2FE).withAlpha(240),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFBAE6FD)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.radar, size: 12, color: Color(0xFF0284C7)),
+                  SizedBox(width: 5),
+                  Text(
+                    'Đang tự động quét lân cận...',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0369A1)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadarBlip(String distance, Color dotColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: dotColor,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(color: dotColor.withAlpha(80), blurRadius: 4),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0284C7),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            distance,
+            style: const TextStyle(fontSize: 8.5, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 }
